@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DailyLog - Task & Weekly Tracker</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+      /* Emerald Executive Palette (Light Mode) */
+      --bg-app: #f6f8fa;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f9fbf9;
+      --bg-surface: #f0f4f2;
+      --bg-input: #ffffff;
+      --border-color: #e2e8e5;
+      --border-focus: #10b981;
+      
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+
+      --primary: #059669;
+      --primary-hover: #047857;
+      --primary-light: #ecfdf5;
+      --primary-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --primary-glow: rgba(16, 185, 129, 0.22);
+
+      --status-comp-bg: #ecfdf5;
+      --status-comp-text: #047857;
+      --status-comp-border: #a7f3d0;
+
+      --status-prog-bg: #eff6ff;
+      --status-prog-text: #1d4ed8;
+      --status-prog-border: #bfdbfe;
+
+      --status-block-bg: #fef2f2;
+      --status-block-text: #b91c1c;
+      --status-block-border: #fecaca;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+      --shadow-md: 0 4px 14px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 12px 28px -4px rgba(0,0,0,0.08);
+
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #0b1017;
+      --bg-card: #131b26;
+      --bg-card-hover: #182230;
+      --bg-surface: #1a2433;
+      --bg-input: #0e1520;
+      --border-color: #223042;
+      --border-focus: #10b981;
+
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: rgba(37, 99, 235, 0.18);
+      --primary-glow: rgba(37, 99, 235, 0.30);
+
+      --status-comp-bg: rgba(16, 185, 129, 0.15);
+      --status-comp-text: #34d399;
+      --status-comp-border: rgba(16, 185, 129, 0.3);
+
+      --status-prog-bg: rgba(59, 130, 246, 0.15);
+      --status-prog-text: #60a5fa;
+      --status-prog-border: rgba(59, 130, 246, 0.3);
+
+      --status-block-bg: rgba(239, 68, 68, 0.18);
+      --status-block-text: #f87171;
+      --status-block-border: rgba(239, 68, 68, 0.35);
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 14px -2px rgba(0,0,0,0.4);
+      --shadow-lg: 0 12px 28px -4px rgba(0,0,0,0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-app);
+      color: var(--text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ========================================================
+       SIDEBAR
+       ======================================================== */
+    .sidebar {
+      width: 260px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 10px 28px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      background: var(--primary-gradient);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .logo-text h2 {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    .logo-text span {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 14px;
+      transition: var(--transition);
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .menu-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .menu-item svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+    }
+
+    .menu-item:hover {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+    }
+
+    .menu-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+      border-color: var(--status-comp-border);
+    }
+
+    .badge-count {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .menu-item.active .badge-count {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    /* User Profile in Sidebar */
+    .user-footer {
+      padding-top: 18px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .user-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .user-status {
+      font-size: 11px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+    }
+
+    .user-status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: inline-block;
+    }
+
+    .theme-toggle-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .theme-toggle-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--primary);
+    }
+
+    /* ========================================================
+       MAIN CONTENT
+       ======================================================== */
+    .main {
+      flex: 1;
+      padding: 32px 40px;
+      overflow-y: auto;
+      max-width: 1360px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Topbar */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .topbar h1 {
+      font-family: var(--font-heading);
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      color: var(--text-primary);
+    }
+
+    .topbar p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    /* Quick KPI Cards */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: var(--transition);
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-focus);
+    }
+
+    .kpi-info span {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-info h3 {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 2px;
+      color: var(--text-primary);
+    }
+
+    .kpi-icon-box {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .kpi-icon-total { background: var(--bg-surface); color: var(--text-secondary); }
+    .kpi-icon-comp  { background: var(--status-comp-bg); color: var(--status-comp-text); }
+    .kpi-icon-prog  { background: var(--status-prog-bg); color: var(--status-prog-text); }
+    .kpi-icon-block { background: var(--status-block-bg); color: var(--status-block-text); }
+
+    /* ========================================================
+       WEEK SELECTOR BAR
+       ======================================================== */
+    .week-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      margin-bottom: 22px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: var(--transition);
+    }
+
+    .nav-btn:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .week-center {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .week-icon {
+      color: var(--primary);
+    }
+
+    .week-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+
+    .btn-this-week {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-this-week:hover {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    /* ========================================================
+       CARD STYLING
+       ======================================================== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 160px 1.2fr 2fr 160px auto;
+      gap: 16px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 7px;
+      color: var(--text-secondary);
+    }
+
+    input,
+    select {
+      width: 100%;
+      height: 44px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0 14px;
+      outline: none;
+      font-size: 14px;
+      font-family: var(--font-body);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      transition: var(--transition);
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .add-btn {
+      height: 44px;
+      padding: 0 22px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--primary-gradient);
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      font-family: var(--font-heading);
+      box-shadow: 0 2px 8px var(--primary-glow);
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .add-btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .add-btn:active {
+      transform: translateY(0);
+    }
+
+    /* ========================================================
+       TABLE & FILTERS
+       ======================================================== */
+    .table-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .table-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-chip {
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .filter-chip:hover {
+      color: var(--text-primary);
+      border-color: var(--primary);
+    }
+
+    .filter-chip.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .search-input-box {
+      position: relative;
+      width: 260px;
+    }
+
+    .search-input-box input {
+      height: 38px;
+      padding-left: 36px;
+      font-size: 13px;
+    }
+
+    .search-icon-inside {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13.5px;
+      color: var(--text-primary);
+      vertical-align: middle;
+      transition: background 0.15s ease;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    .date-badge {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .module-tag {
+      display: inline-block;
+      font-weight: 700;
+      color: var(--text-primary);
+      background: var(--bg-surface);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      font-size: 12.5px;
+      white-space: nowrap;
+    }
+
+    .desc-text {
+      color: var(--text-secondary);
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    /* Status Pills */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .completed {
+      background: var(--status-comp-bg);
+      color: var(--status-comp-text);
+      border-color: var(--status-comp-border);
+    }
+    .completed::before { background: var(--status-comp-text); }
+
+    .progress {
+      background: var(--status-prog-bg);
+      color: var(--status-prog-text);
+      border-color: var(--status-prog-border);
+    }
+    .progress::before { background: var(--status-prog-text); }
+
+    .blocked {
+      background: var(--status-block-bg);
+      color: var(--status-block-text);
+      border-color: var(--status-block-border);
+    }
+    .blocked::before { background: var(--status-block-text); }
+
+    /* Actions */
+    .actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .action-btn:hover {
+      background: var(--bg-card);
+      color: var(--primary);
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    .action-btn.delete:hover {
+      color: #ef4444;
+      border-color: #ef4444;
+      background: var(--status-block-bg);
+    }
+
+    /* Empty State */
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      stroke: var(--text-muted);
+      opacity: 0.6;
+    }
+
+    .empty-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    /* ========================================================
+       MODAL & TOAST
+       ======================================================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 520px;
+      padding: 26px;
+      box-shadow: var(--shadow-lg);
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h3 {
+      font-family: var(--font-heading);
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-secondary {
+      height: 42px;
+      padding: 0 18px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13.5px;
+      transition: var(--transition);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--text-muted);
+    }
+
+    /* Toast Container */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 2000;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      box-shadow: var(--shadow-lg);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========================================================
+       RESPONSIVE
+       ======================================================== */
+    @media (max-width: 1100px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .form-row { grid-template-columns: 1fr 1fr; }
+      .add-btn { width: 100%; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { padding: 20px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .kpi-row { grid-template-columns: 1fr; }
+      .table-toolbar { flex-direction: column; align-items: stretch; }
+      .search-input-box { width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- ========================================================
+       SIDEBAR
+       ======================================================== -->
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="icons/logo.png" alt="DailyLog" style="width:40px; height:40px; border-radius:8px; object-fit:cover; border:1px solid var(--border-color); background:#ffffff;">
+      <div class="logo-text">
+        <h2>DailyLog</h2>
+        <span>Task Tracker</span>
+      </div>
+    </div>
+
+    <div class="menu">
+      <div class="menu-item active" id="menuMyTasks" onclick="switchView('tasks')">
+        <div class="menu-item-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          <span>My Tasks</span>
+        </div>
+        <span class="badge-count" id="sidebarBadgeTasks">0</span>
+      </div>
+
+      <div class="menu-item" id="menuReport" onclick="switchView('report')">
+        <div class="menu-item-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span>Weekly Report</span>
+        </div>
+      </div>
+
+      <div class="menu-item" id="menuExport" onclick="switchView('export')">
+        <div class="menu-item-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>Export & Standup</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Profile & Theme Switch -->
+    <div class="user-footer">
+      <div class="user-info">
+        <div class="avatar">G</div>
+        
+      </div>
+      <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark/Light theme">
+        <span id="themeIcon">🌙</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================================================
+       MAIN VIEW
+       ======================================================== -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div>
+        <h1 id="pageHeading">My Tasks</h1>
+        <p id="pageSubheading">Track your daily accomplishments, updates, and blockers.</p>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-secondary" onclick="copyWeeklyStandup()" title="Copy standup text for Slack/Teams">
+          📋 Copy Standup
+        </button>
+        <button class="btn-secondary" onclick="downloadDailyTxt()" title="Download as dd-MMM-yyyy.txt file">
+          📥 Download .TXT
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 1: MY TASKS -->
+    <div id="viewTasks">
+      
+      <!-- KPI Metric Row -->
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <span>Total Tasks</span>
+            <h3 id="kpiTotal">0</h3>
+          </div>
+          <div class="kpi-icon-box kpi-icon-total">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <span>Completed</span>
+            <h3 id="kpiCompleted" style="color: var(--status-comp-text);">0</h3>
+          </div>
+          <div class="kpi-icon-box kpi-icon-comp">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <span>In Progress</span>
+            <h3 id="kpiProgress" style="color: var(--status-prog-text);">0</h3>
+          </div>
+          <div class="kpi-icon-box kpi-icon-prog">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <span>Blocked</span>
+            <h3 id="kpiBlocked" style="color: var(--status-block-text);">0</h3>
+          </div>
+          <div class="kpi-icon-box kpi-icon-block">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Week Bar -->
+      <div class="week-bar">
+        <div class="week-nav">
+          <button class="nav-btn" onclick="previousWeek()" title="Previous week">‹</button>
+          <div class="week-center">
+            <svg class="week-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <div class="week-title" id="weekTitle">Loading...</div>
+          </div>
+          <button class="nav-btn" onclick="nextWeek()" title="Next week">›</button>
+        </div>
+
+        <button class="btn-this-week" onclick="jumpToCurrentWeek()">Today / This Week</button>
+      </div>
+
+      <!-- Add Task Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Add New Task</span>
+          </div>
+          <span style="font-size:12px; color:var(--text-muted);">Shortcut: Ctrl + Enter</span>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="taskDate">
+          </div>
+
+          <div class="field">
+            <label>Task / Module</label>
+            <input type="text" id="taskName" placeholder="e.g. Appointment / PMS Desk" list="moduleSuggestions">
+            <datalist id="moduleSuggestions"></datalist>
+          </div>
+
+          <div class="field">
+            <label>What did you do?</label>
+            <input type="text" id="taskDescription" placeholder="Write a short description of work completed...">
+          </div>
+
+          <div class="field">
+            <label>Status</label>
+            <select id="taskStatus">
+              <option value="Completed">Completed</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Blocked">Blocked</option>
+            </select>
+          </div>
+
+          <button class="add-btn" onclick="saveTask()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Task
+          </button>
+        </div>
+      </div>
+
+      <!-- Task List Card -->
+      <div class="card">
+        <div class="table-toolbar">
+          <div class="table-filters">
+            <input type="date" id="tableDateFilter" style="height:30px; padding:0 8px; font-size:11.5px; border-radius:15px; border:1px solid var(--border-color); background:var(--bg-surface); color:var(--text-primary); cursor:pointer;" title="Filter by specific date" onchange="handleDateFilter(this.value)">
+            <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+            <button class="filter-chip" onclick="setFilter('Completed', this)">Completed</button>
+            <button class="filter-chip" onclick="setFilter('In Progress', this)">In Progress</button>
+            <button class="filter-chip" onclick="setFilter('Blocked', this)">Blocked</button>
+          </div>
+
+          <div class="search-input-box">
+            <svg class="search-icon-inside" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="taskSearch" placeholder="Search module, text..." oninput="handleSearch(this.value)">
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 140px;">Date</th>
+                <th style="width: 200px;">Task / Module</th>
+                <th>Work Completed</th>
+                <th style="width: 140px;">Status</th>
+                <th style="width: 90px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="taskTable">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: WEEKLY REPORT -->
+    <div id="viewReport" style="display: none;">
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span>Weekly Summary & Module Breakdown</span>
+          </div>
+          <button class="btn-secondary" onclick="exportWeeklySummaryText()">Copy Summary</button>
+        </div>
+        <div id="weeklyReportContent">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: EXPORT & BACKUP -->
+    <div id="viewExport" style="display: none;">
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span>Export & Backup Center</span>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
+          Export your logs into various formats for your personal archive or company reporting.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          <div style="border:1px solid var(--border-color); padding: 18px; border-radius: var(--radius-md); background: var(--bg-surface);">
+            <h4 style="font-size:15px; margin-bottom: 6px;">Daily Text File (.TXT)</h4>
+            <p style="font-size:12.5px; color:var(--text-muted); margin-bottom: 14px;">Matches your standard daily journal format (17-Sep-2026.txt).</p>
+            <button class="btn-secondary" onclick="downloadDailyTxt()">Download Today's .TXT</button>
+          </div>
+          <div style="border:1px solid var(--border-color); padding: 18px; border-radius: var(--radius-md); background: var(--bg-surface);">
+            <h4 style="font-size:15px; margin-bottom: 6px;">CSV Spreadsheet (.CSV)</h4>
+            <p style="font-size:12.5px; color:var(--text-muted); margin-bottom: 14px;">Export all tasks into Microsoft Excel / Google Sheets format.</p>
+            <button class="btn-secondary" onclick="exportCSV()">Download .CSV</button>
+          </div>
+          <div style="border:1px solid var(--border-color); padding: 18px; border-radius: var(--radius-md); background: var(--bg-surface);">
+            <h4 style="font-size:15px; margin-bottom: 6px;">JSON Full Database</h4>
+            <p style="font-size:12.5px; color:var(--text-muted); margin-bottom: 14px;">Complete backup file for safe keeping and restoration.</p>
+            <button class="btn-secondary" onclick="exportJSON()">Download .JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ========================================================
+     EDIT TASK MODAL
+     ======================================================== -->
+<div class="modal-overlay" id="editModalOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Edit Task Details</h3>
+      <button class="action-btn" onclick="closeEditModal()">×</button>
+    </div>
+    <div class="modal-form">
+      <input type="hidden" id="editTaskId">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="editTaskDate">
+      </div>
+      <div class="field">
+        <label>Task / Module</label>
+        <input type="text" id="editTaskName">
+      </div>
+      <div class="field">
+        <label>Work Completed</label>
+        <input type="text" id="editTaskDesc">
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="editTaskStatus">
+          <option value="Completed">Completed</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Blocked">Blocked</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button class="add-btn" onclick="saveEditedTask()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+  /* ========================================================
+     DATA & STATE
+     ======================================================== */
+  let tasks = JSON.parse(localStorage.getItem("worklog_tasks")) || [];
+  let currentFilter = 'all';
+  let searchQuery = '';
+
+  // Clean state - no hardcoded tasks
+
+  // Week navigation state
+  let currentWeekStart = getMonday(new Date());
+
+  // Helper to find Monday of a date's week
+  function getMonday(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+  }
+
+  // Set today's date in input field
+  document.getElementById("taskDate").value = formatInputDate(new Date());
+  updateWeekTitle();
+
+  /* ========================================================
+     SAVE TASK
+     ======================================================== */
+  function saveTask() {
+    const date = document.getElementById("taskDate").value;
+    const name = document.getElementById("taskName").value.trim();
+    const description = document.getElementById("taskDescription").value.trim();
+    const status = document.getElementById("taskStatus").value;
+
+    if (!date || !name || !description) {
+      showToast("Please fill in Date, Task/Module, and Description", "warning");
+      return;
+    }
+
+    const task = {
+      id: Date.now(),
+      date: date,
+      name: name,
+      description: description,
+      status: status
+    };
+
+    tasks.push(task);
+    localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
+
+    document.getElementById("taskName").value = "";
+    document.getElementById("taskDescription").value = "";
+
+    renderTasks();
+    showToast("Task added successfully!", "success");
+  }
+
+  // Keyboard shortcut: Ctrl + Enter to save task
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.id === 'taskName' || activeEl.id === 'taskDescription')) {
+        saveTask();
+      }
+    }
+  });
+
+  /* ========================================================
+     RENDER TASKS
+     ======================================================== */
+  function renderTasks() {
+    const table = document.getElementById("taskTable");
+    table.innerHTML = "";
+
+    // Filter by status & search
+    let filtered = tasks.filter(t => {
+      const matchStatus = currentFilter === 'all' || t.status === currentFilter;
+      const matchDate = !selectedDateFilter || t.date === selectedDateFilter;
+      const matchSearch = !searchQuery || 
+        t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.date.includes(searchQuery);
+      return matchStatus && matchSearch && matchDate;
+    });
+
+    if (filtered.length === 0) {
+      table.innerHTML = `
+        <tr>
+          <td colspan="5">
+            <div class="empty">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <div class="empty-title">No tasks found</div>
+              <p>Add a task using the form above or adjust your search filters.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+      updateKPIs();
+      return;
+    }
+
+    filtered
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .forEach(task => {
+        const row = document.createElement("tr");
+
+        let statusClass = "completed";
+        if (task.status === "In Progress") statusClass = "progress";
+        if (task.status === "Blocked") statusClass = "blocked";
+
+        row.innerHTML = `
+          <td>
+            <span class="date-badge">${formatDate(task.date)}</span>
+          </td>
+          <td>
+            <span class="module-tag">${escapeHTML(task.name)}</span>
+          </td>
+          <td>
+            <span class="desc-text">${escapeHTML(task.description)}</span>
+          </td>
+          <td>
+            <span class="status ${statusClass}">
+              ${task.status}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="actions" style="justify-content: flex-end;">
+              <button class="action-btn" onclick="openEditModal(${task.id})" title="Edit task">
+                ✎
+              </button>
+              <button class="action-btn delete" onclick="deleteTask(${task.id})" title="Delete task">
+                ×
+              </button>
+            </div>
+          </td>
+        `;
+
+        table.appendChild(row);
+      });
+
+    updateKPIs();
+  }
+
+  /* ========================================================
+     EDIT MODAL
+     ======================================================== */
+  function openEditModal(id) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    document.getElementById("editTaskId").value = task.id;
+    document.getElementById("editTaskDate").value = task.date;
+    document.getElementById("editTaskName").value = task.name;
+    document.getElementById("editTaskDesc").value = task.description;
+    document.getElementById("editTaskStatus").value = task.status;
+
+    document.getElementById("editModalOverlay").classList.add("active");
+  }
+
+  function closeEditModal() {
+    document.getElementById("editModalOverlay").classList.remove("active");
+  }
+
+  function saveEditedTask() {
+    const id = Number(document.getElementById("editTaskId").value);
+    const date = document.getElementById("editTaskDate").value;
+    const name = document.getElementById("editTaskName").value.trim();
+    const desc = document.getElementById("editTaskDesc").value.trim();
+    const status = document.getElementById("editTaskStatus").value;
+
+    if (!date || !name || !desc) {
+      showToast("Please fill in all fields", "warning");
+      return;
+    }
+
+    const idx = tasks.findIndex(t => t.id === id);
+    if (idx !== -1) {
+      tasks[idx] = { id, date, name, description: desc, status };
+      localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
+      closeEditModal();
+      renderTasks();
+      showToast("Task updated successfully!", "success");
+    }
+  }
+
+  /* ========================================================
+     DELETE TASK
+     ======================================================== */
+  function deleteTask(id) {
+    if (!confirm("Are you sure you want to delete this task?")) return;
+    tasks = tasks.filter(t => t.id !== id);
+    localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
+    renderTasks();
+    showToast("Task removed", "info");
+  }
+
+  /* ========================================================
+     KPIs & STATS
+     ======================================================== */
+  function updateKPIs() {
+    const total = tasks.length;
+    const comp = tasks.filter(t => t.status === "Completed").length;
+    const prog = tasks.filter(t => t.status === "In Progress").length;
+    const block = tasks.filter(t => t.status === "Blocked").length;
+
+    document.getElementById("kpiTotal").innerText = total;
+    document.getElementById("kpiCompleted").innerText = comp;
+    document.getElementById("kpiProgress").innerText = prog;
+    document.getElementById("kpiBlocked").innerText = block;
+
+    document.getElementById("sidebarBadgeTasks").innerText = total;
+  }
+
+  /* ========================================================
+     FILTERS & SEARCH
+     ======================================================== */
+  let selectedDateFilter = "";
+  function handleDateFilter(val) { selectedDateFilter = val; renderTasks(); }
+  window.addEventListener('DOMContentLoaded', () => {
+    const tdf = document.getElementById('tableDateFilter');
+    if (tdf) {
+      tdf.addEventListener('click', () => {
+        try { if (typeof tdf.showPicker === 'function') tdf.showPicker(); } catch(e){}
+      });
+    }
+  });
+  function setFilter(filterType, buttonEl) {
+    currentFilter = filterType;
+    document.querySelectorAll(".filter-chip").forEach(b => b.classList.remove("active"));
+    buttonEl.classList.add("active");
+    renderTasks();
+  }
+
+  function handleSearch(val) {
+    searchQuery = val.trim();
+    renderTasks();
+  }
+
+  /* ========================================================
+     DATE & WEEK NAVIGATION
+     ======================================================== */
+  function formatDate(date) {
+    const d = new Date(date + 'T00:00:00');
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  }
+
+  function formatInputDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  function previousWeek() {
+    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    updateWeekTitle();
+  }
+
+  function nextWeek() {
+    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    updateWeekTitle();
+  }
+
+  function jumpToCurrentWeek() {
+    currentWeekStart = getMonday(new Date());
+    updateWeekTitle();
+  }
+
+  function updateWeekTitle() {
+    const start = new Date(currentWeekStart);
+    const end = new Date(currentWeekStart);
+    end.setDate(end.getDate() + 4); // Mon to Fri
+    document.getElementById("weekTitle").innerText = `${formatDate(formatInputDate(start))} – ${formatDate(formatInputDate(end))}`;
+  }
+
+  /* ========================================================
+     VIEWS SWITCHER
+     ======================================================== */
+  function switchView(viewName) {
+    document.getElementById("viewTasks").style.display = viewName === 'tasks' ? 'block' : 'none';
+    document.getElementById("viewReport").style.display = viewName === 'report' ? 'block' : 'none';
+    document.getElementById("viewExport").style.display = viewName === 'export' ? 'block' : 'none';
+
+    document.getElementById("menuMyTasks").classList.toggle("active", viewName === 'tasks');
+    document.getElementById("menuReport").classList.toggle("active", viewName === 'report');
+    document.getElementById("menuExport").classList.toggle("active", viewName === 'export');
+
+    if (viewName === 'tasks') {
+      document.getElementById("pageHeading").innerText = "My Tasks";
+      document.getElementById("pageSubheading").innerText = "Track your daily accomplishments, updates, and blockers.";
+    } else if (viewName === 'report') {
+      document.getElementById("pageHeading").innerText = "Weekly Report";
+      document.getElementById("pageSubheading").innerText = "Synthesized module-wise breakdown for management review.";
+      renderWeeklyReport();
+    } else if (viewName === 'export') {
+      document.getElementById("pageHeading").innerText = "Export & Backup";
+      document.getElementById("pageSubheading").innerText = "Download your task archives in Plain Text, CSV, or JSON.";
+    }
+  }
+
+  /* ========================================================
+     WEEKLY REPORT RENDERER
+     ======================================================== */
+  function renderWeeklyReport() {
+    const container = document.getElementById("weeklyReportContent");
+    const moduleMap = {};
+
+    tasks.forEach(t => {
+      if (!moduleMap[t.name]) moduleMap[t.name] = [];
+      moduleMap[t.name].push(t);
+    });
+
+    let html = '';
+    for (const [moduleName, mTasks] of Object.entries(moduleMap)) {
+      html += `
+        <div style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h4 style="font-size:15px; font-weight:700; color:var(--text-primary);">${escapeHTML(moduleName)}</h4>
+            <span class="module-tag">${mTasks.length} task(s)</span>
+          </div>
+          <ul style="padding-left: 20px; color: var(--text-secondary); font-size: 13.5px; line-height: 1.6;">
+            ${mTasks.map(t => `<li>${escapeHTML(t.description)} <strong style="font-size:12px;">[${t.status}]</strong></li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html || '<p style="color:var(--text-muted);">No tasks to report yet.</p>';
+  }
+
+  /* ========================================================
+     EXPORTERS (.TXT, STANDUP, CSV, JSON)
+     ======================================================== */
+  function copyWeeklyStandup() {
+    let output = "Today's Task:\n";
+    const grouped = {};
+    tasks.forEach(t => {
+      if (!grouped[t.name]) grouped[t.name] = [];
+      grouped[t.name].push(t);
+    });
+
+    let counter = 1;
+    for (const [mod, items] of Object.entries(grouped)) {
+      output += `${counter}. ${mod}:\n`;
+      items.forEach(item => {
+        output += `   - ${item.description}\n`;
+      });
+      output += "\n";
+      counter++;
+    }
+
+    navigator.clipboard.writeText(output).then(() => {
+      showToast("Copied Standup formatted log to clipboard!", "success");
+    });
+  }
+
+  function downloadDailyTxt() {
+    let output = "Today's Task:\n";
+    const grouped = {};
+    const todayStr = formatInputDate(new Date());
+    const todayTasks = tasks.filter(t => t.date === todayStr);
+    const targetTasks = todayTasks.length > 0 ? todayTasks : tasks;
+
+    let counter = 1;
+    targetTasks.forEach(t => {
+      if (!grouped[t.name]) grouped[t.name] = [];
+      grouped[t.name].push(t);
+    });
+
+    for (const [mod, items] of Object.entries(grouped)) {
+      output += `${counter}. ${mod}:\n`;
+      items.forEach(item => {
+        output += `   - ${item.description}\n`;
+      });
+      output += "\n";
+      counter++;
+    }
+
+    const d = new Date();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const filename = `${String(d.getDate()).padStart(2, '0')}-${months[d.getMonth()]}-${d.getFullYear()}.txt`;
+
+    triggerDownload(filename, output, 'text/plain');
+    showToast(`Downloaded ${filename}`, "success");
+  }
+
+  function exportCSV() {
+    let csv = "Date,Task / Module,Work Completed,Status\n";
+    tasks.forEach(t => {
+      csv += `"${t.date}","${t.name.replace(/"/g, '""')}","${t.description.replace(/"/g, '""')}","${t.status}"\n`;
+    });
+    triggerDownload("DailyLog_Tasks.csv", csv, 'text/csv');
+    showToast("Downloaded DailyLog_Tasks.csv", "success");
+  }
+
+  function exportJSON() {
+    const json = JSON.stringify(tasks, null, 2);
+    triggerDownload("DailyLog_Backup.json", json, 'application/json');
+    showToast("Downloaded DailyLog_Backup.json", "success");
+  }
+
+  function exportWeeklySummaryText() {
+    copyWeeklyStandup();
+  }
+
+  function triggerDownload(filename, text, type) {
+    const blob = new Blob([text], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /* ========================================================
+     THEME TOGGLE
+     ======================================================== */
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("worklog_theme", next);
+    document.getElementById("themeIcon").innerText = next === "dark" ? "☀️" : "🌙";
+  }
+
+  // Load saved theme
+  const savedTheme = localStorage.getItem("worklog_theme") || "light";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  document.getElementById("themeIcon").innerText = savedTheme === "dark" ? "☀️" : "🌙";
+
+  /* ========================================================
+     TOAST HELPER
+     ======================================================== */
+  function showToast(msg, type = "info") {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.innerHTML = `<span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      setTimeout(() => toast.remove(), 250);
+    }, 2400);
+  }
+
+  /* ========================================================
+     HTML ESCAPER
+     ======================================================== */
+  function escapeHTML(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /* ========================================================
+     INIT
+     ======================================================== */
+  renderTasks();
+</script>
+
+</body>
+</html>

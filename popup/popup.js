@@ -1,0 +1,979 @@
+/**
+ * DailyLog Pro - Executive Popup Controller
+ * Zero hardcoded data. 100% user-driven.
+ */
+
+let tasks = [];
+
+// Synchronously cached browser window and tab IDs to preserve Chrome's user gesture
+let currentBrowserWindowId = null;
+let currentActiveTabId = null;
+
+if (typeof chrome !== "undefined") {
+  if (chrome.windows && chrome.windows.getLastFocused) {
+    chrome.windows.getLastFocused({ windowTypes: ["normal"] }, (win) => {
+      if (win && win.id) currentBrowserWindowId = win.id;
+    });
+  }
+  if (chrome.tabs && chrome.tabs.query) {
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+      if (tabs && tabs[0]) {
+        currentActiveTabId = tabs[0].id;
+        if (!currentBrowserWindowId) currentBrowserWindowId = tabs[0].windowId;
+      }
+    });
+  }
+}
+
+let currentFilterDate = getTodayKey();
+let activeView = 'today'; // 'today' | 'week' | 'all'
+let collapsedModules = new Set();
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadState();
+  initUI();
+  syncWithDiskTasks(currentFilterDate);
+});
+
+async function loadState() {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['worklog_tasks', 'worklog_theme'], (res) => {
+        let loaded = (res.worklog_tasks && Array.isArray(res.worklog_tasks)) ? res.worklog_tasks : [];
+        // Clean out any previously injected sample seed IDs (1 to 10, 101 to 110)
+        tasks = loaded.filter(t => !(t.id >= 1 && t.id <= 10) && !(t.id >= 101 && t.id <= 110));
+        chrome.storage.local.set({ worklog_tasks: tasks });
+
+        if (res.worklog_theme) {
+          applyTheme(res.worklog_theme);
+        }
+        resolve();
+      });
+    });
+  } else {
+    const local = localStorage.getItem("worklog_tasks");
+    let loaded = local ? JSON.parse(local) : [];
+    tasks = loaded.filter(t => !(t.id >= 1 && t.id <= 10) && !(t.id >= 101 && t.id <= 110));
+    localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
+    
+    const savedTheme = localStorage.getItem("worklog_theme") || "dark";
+    applyTheme(savedTheme);
+  }
+}
+
+function persistTasks(targetDate) {
+  localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.set({ worklog_tasks: tasks });
+  }
+
+  // Auto-sync directly to local text file in D:\Personal\Data
+  if (window.DailyLogLocalSync && typeof window.DailyLogLocalSync.syncTasksForDate === 'function') {
+    const syncDate = targetDate || currentFilterDate;
+    window.DailyLogLocalSync.syncTasksForDate(syncDate, tasks).then(res => {
+      if (res && res.synced) {
+        console.log('[DailyLog] Auto-synced to local file: ' + res.path);
+        const syncBtn = document.getElementById("btnSyncFolder");
+        if (syncBtn) syncBtn.classList.add("sync-connected");
+      }
+    }).catch(err => console.warn('[DailyLog] Local sync notice:', err));
+  }
+}
+
+function initUI() {
+  const dInp = document.getElementById("dateInput"); if (dInp) dInp.value = currentFilterDate;
+  initCalendarPopover();
+
+  // Also make the command row date picker open on click anywhere
+  const cmdDateInput = document.getElementById("dateInput");
+  if (cmdDateInput) {
+    cmdDateInput.addEventListener("click", () => {
+      try {
+        if (typeof cmdDateInput.showPicker === "function") {
+          cmdDateInput.showPicker();
+        }
+      } catch (err) {}
+    });
+    cmdDateInput.addEventListener("change", (e) => {
+      if (e.target.value) {
+        currentFilterDate = e.target.value;
+        if (datePicker) datePicker.value = currentFilterDate;
+        activeView = 'today';
+        document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b.dataset.view === 'today'));
+        updateDateDisplay();
+        renderTasks();
+      }
+    });
+  }
+
+  // Jump to Today button
+  const btnToday = document.getElementById("btnJumpToday");
+  if (btnToday) {
+    btnToday.addEventListener("click", () => {
+      currentFilterDate = getTodayKey();
+      const dInp = document.getElementById("dateInput"); if (dInp) dInp.value = currentFilterDate;
+      if (datePicker) datePicker.value = currentFilterDate;
+      activeView = 'today';
+      document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b.dataset.view === 'today'));
+      updateDateDisplay();
+      renderTasks();
+      syncWithDiskTasks(currentFilterDate);
+    });
+  }
+  updateDateDisplay();
+  populateModuleDropdown();
+  renderTasks();
+
+  // Events
+  document.getElementById("btnSubmitTask").addEventListener("click", addTask);
+  document.getElementById("taskTextInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addTask();
+  });
+
+  document.getElementById("btnPrevDay").addEventListener("click", () => {
+    shiftDate(-1);
+  });
+  document.getElementById("btnNextDay").addEventListener("click", () => {
+    shiftDate(1);
+  });
+
+  // Segment Buttons
+  document.querySelectorAll(".seg-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".seg-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeView = btn.dataset.view;
+      renderTasks();
+    });
+  });
+
+  // Module Select "+ New" trigger
+  const modSel = document.getElementById("moduleSelect");
+  if (modSel) modSel.addEventListener("change", (e) => {
+    if (e.target.value === "+ New Module...") {
+      const newName = prompt("Enter new module / project name (e.g. Front Desk / Billing):");
+      if (newName && newName.trim()) {
+        const clean = newName.trim();
+        const opt = document.createElement("option");
+        opt.value = clean;
+        opt.textContent = clean;
+        opt.selected = true;
+        e.target.insertBefore(opt, e.target.lastElementChild);
+      } else {
+        e.target.selectedIndex = 0;
+      }
+    }
+  });
+
+  // Theme Toggle
+  
+  // Local Folder Auto-Sync Button
+  const btnSyncFolder = document.getElementById("btnSyncFolder");
+  if (btnSyncFolder) {
+    if (window.DailyLogLocalSync) {
+      window.DailyLogLocalSync.isConnected().then(connected => {
+        if (connected) {
+          btnSyncFolder.classList.add("sync-connected");
+          btnSyncFolder.title = "Local Sync Active (D:\\Personal\\Data) - Click to sync now";
+        } else {
+          btnSyncFolder.classList.remove("sync-connected");
+          btnSyncFolder.title = "Connect Local Folder (D:\\Personal\\Data)";
+        }
+      });
+    }
+
+    btnSyncFolder.addEventListener("click", async () => {
+      console.log("[DailyLog] Sync button clicked in popup");
+      const isConn = window.DailyLogLocalSync ? await window.DailyLogLocalSync.isConnected() : false;
+      if (isConn) {
+        btnSyncFolder.classList.add("sync-connected");
+        showToast("Syncing with D:\\Personal\\Data...");
+        const res = await window.DailyLogLocalSync.syncTasksForDate(currentFilterDate, tasks);
+        if (res && res.synced) {
+          showToast("Synced " + res.count + " tasks to " + res.path);
+        } else {
+          showToast("Tasks are up to date");
+        }
+      } else {
+        // Open sync_setup.html in a tab to prevent popup closing on file picker focus loss
+        if (typeof chrome !== 'undefined' && chrome.tabs) {
+          chrome.tabs.create({ url: chrome.runtime.getURL('sync_setup.html') });
+        } else {
+          window.open('../sync_setup.html', '_blank');
+        }
+      }
+    });
+  }
+
+  document.getElementById("btnThemeToggle").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = cur === "dark" ? "light" : "dark";
+    applyTheme(next);
+  });
+
+  // Exporters
+  document.getElementById("btnCopyStandup").addEventListener("click", copyStandupReport);
+  document.getElementById("btnCopyTxt").addEventListener("click", copyPlainTextJournal);
+  document.getElementById("btnDownloadTxt").addEventListener("click", downloadJournalFile);
+
+  // Workspace Launcher
+  document.getElementById("btnOpenDashboard").addEventListener("click", openWorkspace);
+  document.getElementById("btnLaunchFull").addEventListener("click", openWorkspace);
+
+    // Sidebar Launcher (Chrome Side Panel API - User Gesture Synchronous)
+  function openSidePanelAction() {
+    console.log("Opening side panel...");
+
+    // 1. Dispatch message to background service worker
+    if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ action: "open_side_panel", type: "OPEN_SIDE_PANEL" });
+    }
+
+    // 2. Direct call from popup using active tab in current normal window
+    if (typeof chrome !== "undefined" && chrome.sidePanel && typeof chrome.sidePanel.open === "function") {
+      if (chrome.tabs && chrome.tabs.query) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs && tabs[0] && tabs[0].id) {
+            chrome.sidePanel.open({ tabId: tabs[0].id }).catch((err) => {
+              console.warn("Direct tabId sidepanel open failed:", err);
+              if (tabs[0].windowId) {
+                chrome.sidePanel.open({ windowId: tabs[0].windowId }).catch(() => {});
+              }
+            });
+          }
+        });
+      }
+    }
+
+    // 3. Close the popup window after a brief tick so the side panel gains focus on the screen
+    setTimeout(() => {
+      window.close();
+    }, 150);
+  }
+
+  const btnOpenSidebar = document.getElementById("btnOpenSidebar");
+  if (btnOpenSidebar) {
+    btnOpenSidebar.addEventListener("click", (e) => {
+      e.preventDefault();
+      openSidePanelAction();
+    });
+  }
+
+  const btnDockSidebar = document.getElementById("btnDockSidebar");
+  if (btnDockSidebar) {
+    btnDockSidebar.addEventListener("click", (e) => {
+      e.preventDefault();
+      openSidePanelAction();
+    });
+  }
+
+}
+
+let calViewYear = null;
+let calViewMonth = null;
+
+function initCalendarPopover() {
+  const container = document.getElementById("datePickerContainer");
+  const popover = document.getElementById("calendarPopover");
+  const overlay = document.getElementById("dateDisplayOverlay");
+  const monthTitle = document.getElementById("calMonthTitle");
+  const daysGrid = document.getElementById("calDaysGrid");
+  const btnPrev = document.getElementById("btnCalPrevMonth");
+  const btnNext = document.getElementById("btnCalNextMonth");
+  const btnToday = document.getElementById("btnCalJumpToday");
+
+  if (!container || !popover) return;
+
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function renderCalendar() {
+    if (calViewYear === null || calViewMonth === null) {
+      const parts = currentFilterDate.split('-');
+      calViewYear = parseInt(parts[0], 10);
+      calViewMonth = parseInt(parts[1], 10) - 1;
+    }
+
+    monthTitle.textContent = `${months[calViewMonth]} ${calViewYear}`;
+    daysGrid.innerHTML = '';
+
+    const firstDayIndex = new Date(calViewYear, calViewMonth, 1).getDay();
+    const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+    const todayStr = getTodayKey();
+
+    // Fill leading previous-month days
+    const prevMonthDays = new Date(calViewYear, calViewMonth, 0).getDate();
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const cell = document.createElement("div");
+      cell.className = "cal-day-cell other-month";
+      cell.textContent = prevMonthDays - i;
+      daysGrid.appendChild(cell);
+    }
+
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayStr = `${calViewYear}-${String(calViewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const cell = document.createElement("div");
+      cell.className = "cal-day-cell";
+      cell.textContent = day;
+
+      if (dayStr === currentFilterDate) cell.classList.add("active-day");
+      if (dayStr === todayStr) cell.classList.add("today-day");
+      if (tasks.some(t => t.date === dayStr)) cell.classList.add("has-tasks");
+
+      cell.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectCalendarDate(dayStr);
+      });
+
+      daysGrid.appendChild(cell);
+    }
+
+    // Fill trailing next-month slots
+    const totalSlots = firstDayIndex + daysInMonth;
+    const remainingSlots = (7 - (totalSlots % 7)) % 7;
+    for (let i = 1; i <= remainingSlots; i++) {
+      const cell = document.createElement("div");
+      cell.className = "cal-day-cell other-month";
+      cell.textContent = i;
+      daysGrid.appendChild(cell);
+    }
+  }
+
+  function openPopover() {
+    const parts = currentFilterDate.split('-');
+    calViewYear = parseInt(parts[0], 10);
+    calViewMonth = parseInt(parts[1], 10) - 1;
+    renderCalendar();
+    popover.hidden = false;
+    container.classList.add("open");
+  }
+
+  function closePopover() {
+    popover.hidden = true;
+    container.classList.remove("open");
+  }
+
+  function togglePopover() {
+    if (popover.hidden) {
+      openPopover();
+    } else {
+      closePopover();
+    }
+  }
+
+  function selectCalendarDate(dateStr) {
+    currentFilterDate = dateStr;
+    const dInp = document.getElementById("dateInput"); if (dInp) dInp.value = currentFilterDate;
+    activeView = 'today';
+    document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b.dataset.view === 'today'));
+    updateDateDisplay();
+    renderTasks();
+    syncWithDiskTasks(currentFilterDate);
+    closePopover();
+  }
+
+  if (overlay) {
+    overlay.addEventListener("click", (e) => {
+      e.stopPropagation();
+      togglePopover();
+    });
+  }
+
+  container.addEventListener("click", (e) => {
+    if (e.target === container) {
+      togglePopover();
+    }
+  });
+
+  container.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      togglePopover();
+    } else if (e.key === "Escape") {
+      closePopover();
+    }
+  });
+
+  if (btnPrev) {
+    btnPrev.addEventListener("click", (e) => {
+      e.stopPropagation();
+      calViewMonth--;
+      if (calViewMonth < 0) {
+        calViewMonth = 11;
+        calViewYear--;
+      }
+      renderCalendar();
+    });
+  }
+
+  if (btnNext) {
+    btnNext.addEventListener("click", (e) => {
+      e.stopPropagation();
+      calViewMonth++;
+      if (calViewMonth > 11) {
+        calViewMonth = 0;
+        calViewYear++;
+      }
+      renderCalendar();
+    });
+  }
+
+  if (btnToday) {
+    btnToday.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectCalendarDate(getTodayKey());
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    if (!popover.hidden && !container.contains(e.target)) {
+      closePopover();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !popover.hidden) {
+      closePopover();
+    }
+  });
+}
+
+function populateModuleDropdown() {
+  const select = document.getElementById("moduleSelect");
+  if (!select) return;
+  const existingValues = new Set(Array.from(select.options).map(o => o.value));
+
+  tasks.forEach(t => {
+    if (t.name && !existingValues.has(t.name)) {
+      existingValues.add(t.name);
+      const opt = document.createElement("option");
+      opt.value = t.name;
+      opt.textContent = t.name;
+      select.insertBefore(opt, select.lastElementChild);
+    }
+  });
+}
+
+function addTask() {
+  const textInput = document.getElementById("taskTextInput");
+  const text = textInput.value.trim();
+  if (!text) {
+    textInput.focus();
+    return;
+  }
+
+  const modSelEl = document.getElementById("moduleSelect");
+  let moduleName = modSelEl ? modSelEl.value : "General Tasks";
+  if (!moduleName || moduleName === "+ New Module...") {
+    moduleName = "General Tasks";
+  }
+  const statSelEl = document.getElementById("statusSelect");
+  const status = statSelEl ? statSelEl.value : "In Progress";
+  const dateInpEl = document.getElementById("dateInput");
+  const date = (dateInpEl && dateInpEl.value) ? dateInpEl.value : currentFilterDate;
+
+  const newTask = {
+    id: Date.now(),
+    date: date,
+    name: moduleName,
+    module: moduleName,
+    description: text,
+    text: text,
+    status: status
+  };
+
+  tasks.unshift(newTask);
+  persistTasks();
+  textInput.value = "";
+  populateModuleDropdown();
+  renderTasks();
+  showToast("Task added to log");
+}
+
+function startInlineEdit(task, row, textEl) {
+  if (row.classList.contains("editing")) return;
+  row.classList.add("editing");
+
+  const originalVal = task.text || task.description || "";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "task-inline-input";
+  input.value = originalVal;
+
+  textEl.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let committed = false;
+
+  const commitEdit = () => {
+    if (committed) return;
+    committed = true;
+    const newVal = input.value.trim();
+    if (newVal && newVal !== originalVal) {
+      task.text = newVal;
+      task.description = newVal;
+      persistTasks();
+      renderTasks();
+      showToast("Task updated");
+    } else {
+      input.replaceWith(textEl);
+      row.classList.remove("editing");
+    }
+  };
+
+  const cancelEdit = () => {
+    if (committed) return;
+    committed = true;
+    input.replaceWith(textEl);
+    row.classList.remove("editing");
+  };
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitEdit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancelEdit();
+    }
+  });
+
+  input.addEventListener("blur", () => {
+    commitEdit();
+  });
+}
+
+function renderTasks() {
+  const canvas = document.getElementById("tasksCanvas");
+  canvas.innerHTML = "";
+
+  // Filter tasks according to activeView
+  let targetTasks = [];
+  if (activeView === 'today') {
+    targetTasks = tasks.filter(t => t.date === currentFilterDate);
+  } else if (activeView === 'week') {
+    const weekBounds = getWeekBounds(currentFilterDate);
+    targetTasks = tasks.filter(t => t.date >= weekBounds.start && t.date <= weekBounds.end);
+  } else {
+    targetTasks = [...tasks];
+  }
+
+  if (targetTasks.length === 0) {
+    canvas.innerHTML = `
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <p style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">No tasks recorded for this date.</p>
+        <p style="font-size: 11.5px; color: var(--text-muted);">Type in the input above and press Enter to add a task.</p>
+      </div>
+    `;
+    updateMetrics(0, 0);
+    return;
+  }
+
+  // Group tasks by module name
+  const grouped = {};
+  targetTasks.forEach(t => {
+    const key = t.name || t.module || 'General Tasks';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(t);
+  });
+
+  let totalTasks = targetTasks.length;
+  let completedTasks = targetTasks.filter(t => t.status === "Completed").length;
+
+  for (const [moduleName, items] of Object.entries(grouped)) {
+    const card = document.createElement("div");
+    card.className = "module-group";
+
+    const isCollapsed = collapsedModules.has(moduleName);
+    if (isCollapsed) card.classList.add("collapsed");
+
+    const doneCount = items.filter(i => i.status === "Completed").length;
+    const totalCount = items.length;
+
+    card.innerHTML = `
+      <div class="group-header">
+        <div class="group-title-box">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--brand-primary)">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span class="group-title">${escapeHTML(moduleName)}</span>
+        </div>
+        <div class="group-header-actions">
+          <span class="group-badge">${doneCount}/${totalCount}</span>
+          <button class="group-collapse-btn" title="${isCollapsed ? 'Maximize' : 'Minimize'}" type="button">
+            <svg class="collapse-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="group-tasks-list" id="groupList_${moduleName.replace(/\W/g, '_')}" style="${isCollapsed ? 'display:none;' : ''}"></div>
+    `;
+
+    const header = card.querySelector(".group-header");
+    const listEl = card.querySelector(`#groupList_${moduleName.replace(/\W/g, '_')}`);
+
+    header.addEventListener("click", () => {
+      if (collapsedModules.has(moduleName)) {
+        collapsedModules.delete(moduleName);
+      } else {
+        collapsedModules.add(moduleName);
+      }
+      const nowCollapsed = collapsedModules.has(moduleName);
+      card.classList.toggle("collapsed", nowCollapsed);
+      listEl.style.display = nowCollapsed ? "none" : "";
+      const btn = header.querySelector(".group-collapse-btn");
+      if (btn) btn.title = nowCollapsed ? "Maximize" : "Minimize";
+    });
+
+    items.forEach(task => {
+      const row = document.createElement("div");
+      row.className = `task-row ${task.status === "Completed" ? 'completed' : ''}`;
+
+      let statusPillClass = "completed";
+      if (task.status === "In Progress") statusPillClass = "progress";
+      if (task.status === "Blocked") statusPillClass = "blocked";
+
+      row.innerHTML = `
+        <input type="checkbox" class="task-check" ${task.status === "Completed" ? 'checked' : ''} title="Mark done">
+        <div class="task-body">
+          <span class="task-text">${escapeHTML(task.description || task.text || "")}</span>
+        </div>
+        <div class="task-right">
+          ${activeView !== 'today' && task.date ? `<span class="task-date-badge">${task.date}</span>` : ''}
+          <span class="status-pill ${statusPillClass}">${task.status}</span>
+          <div class="task-actions">
+            <button class="row-action-btn edit-btn" title="Edit text">✎</button>
+            <button class="row-action-btn delete del-btn" title="Delete">×</button>
+          </div>
+        </div>
+      `;
+
+      // Toggle Done Checkbox
+      row.querySelector(".task-check").addEventListener("change", (e) => {
+        task.status = e.target.checked ? "Completed" : "In Progress";
+        persistTasks();
+        renderTasks();
+      });
+
+      // Edit Task (Inline)
+      const textSpan = row.querySelector(".task-text");
+      const editBtn = row.querySelector(".edit-btn");
+      editBtn.addEventListener("click", () => {
+        startInlineEdit(task, row, textSpan);
+      });
+      textSpan.addEventListener("dblclick", () => {
+        startInlineEdit(task, row, textSpan);
+      });
+
+      // Delete Task
+      row.querySelector(".del-btn").addEventListener("click", () => {
+        if (confirm("Remove this task?")) {
+          tasks = tasks.filter(t => t.id !== task.id);
+          persistTasks();
+          renderTasks();
+          showToast("Task removed");
+        }
+      });
+
+      listEl.appendChild(row);
+    });
+
+    canvas.appendChild(card);
+  }
+
+  updateMetrics(totalTasks, completedTasks);
+}
+
+function updateMetrics(total, completed) {
+  const sumEl = document.getElementById("progressSummary");
+  const pctEl = document.getElementById("progressPercentage");
+  const fillEl = document.getElementById("progressTrackFill");
+  if (!sumEl || !pctEl || !fillEl) return;
+  const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+  sumEl.innerText = `${completed} of ${total} tasks completed`;
+  pctEl.innerText = `${pct}%`;
+  fillEl.style.width = `${pct}%`;
+}
+
+function shiftDate(deltaDays) {
+  const parts = currentFilterDate.split('-');
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  d.setDate(d.getDate() + deltaDays);
+  currentFilterDate = formatInputDate(d);
+  const dInp = document.getElementById("dateInput"); if (dInp) dInp.value = currentFilterDate;
+  const picker = document.getElementById("filterDatePicker");
+  if (picker) picker.value = currentFilterDate;
+  activeView = 'today';
+  document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b.dataset.view === 'today'));
+  updateDateDisplay();
+  renderTasks();
+  syncWithDiskTasks(currentFilterDate);
+}
+
+function updateDateDisplay() {
+  const parts = currentFilterDate.split('-');
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  const isToday = currentFilterDate === getTodayKey();
+  const options = { day: 'numeric', month: 'short', year: 'numeric' };
+  const formatted = d.toLocaleDateString('en-GB', options);
+  document.getElementById("currentDateDisplay").innerText = isToday ? `Today — ${formatted}` : formatted;
+}
+
+function copyStandupReport() {
+  if (tasks.length === 0) {
+    showToast("No tasks to copy");
+    return;
+  }
+  let output = `### 🚀 Daily Standup Update (${currentFilterDate})\n\n`;
+  const currentDayTasks = tasks.filter(t => t.date === currentFilterDate);
+  const target = currentDayTasks.length > 0 ? currentDayTasks : tasks;
+
+  const done = target.filter(t => t.status === "Completed");
+  const inProg = target.filter(t => t.status === "In Progress");
+  const blocked = target.filter(t => t.status === "Blocked");
+
+  output += "**✅ Accomplished:**\n";
+  if (done.length > 0) {
+    done.forEach(t => output += `- ${t.name.replace(/^\d+\.\s*/, '')}: ${t.description}\n`);
+  } else {
+    output += "- None\n";
+  }
+  output += "\n";
+
+  output += "**⏳ In Progress / Today:**\n";
+  if (inProg.length > 0) {
+    inProg.forEach(t => output += `- ${t.name.replace(/^\d+\.\s*/, '')}: ${t.description}\n`);
+  } else {
+    output += "- None\n";
+  }
+  output += "\n";
+
+  output += "**⚠️ Blockers:**\n";
+  if (blocked.length > 0) {
+    blocked.forEach(t => output += `- ${t.description}\n`);
+  } else {
+    output += "- None\n";
+  }
+
+  navigator.clipboard.writeText(output).then(() => {
+    showToast("Copied Standup update for Slack/Teams!");
+  });
+}
+
+function copyPlainTextJournal() {
+  const currentDayTasks = tasks.filter(t => t.date === currentFilterDate);
+  const target = currentDayTasks.length > 0 ? currentDayTasks : tasks;
+
+  if (target.length === 0) {
+    showToast("No tasks to copy");
+    return;
+  }
+
+  let output = "Today's Task:\n";
+  const grouped = {};
+  target.forEach(t => {
+    if (!grouped[t.name]) grouped[t.name] = [];
+    grouped[t.name].push(t);
+  });
+
+  let counter = 1;
+  for (const [mod, items] of Object.entries(grouped)) {
+    let cleanMod = mod.replace(/^\d+\.\s*/, '').replace(/:$/, '');
+    output += `${counter}. ${cleanMod}:\n`;
+    items.forEach(i => {
+      output += `   - ${i.description}\n`;
+    });
+    output += "\n";
+    counter++;
+  }
+
+  navigator.clipboard.writeText(output).then(() => {
+    showToast("Copied daily journal format to clipboard!");
+  });
+}
+
+function downloadJournalFile() {
+  const currentDayTasks = tasks.filter(t => t.date === currentFilterDate);
+  const target = currentDayTasks.length > 0 ? currentDayTasks : tasks;
+
+  let output = "Today's Task:\n";
+  const grouped = {};
+  target.forEach(t => {
+    if (!grouped[t.name]) grouped[t.name] = [];
+    grouped[t.name].push(t);
+  });
+
+  let counter = 1;
+  for (const [mod, items] of Object.entries(grouped)) {
+    let cleanMod = mod.replace(/^\d+\.\s*/, '').replace(/:$/, '');
+    output += `${counter}. ${cleanMod}:\n`;
+    items.forEach(i => {
+      output += `   - ${i.description}\n`;
+    });
+    output += "\n";
+    counter++;
+  }
+
+  const parts = currentFilterDate.split('-');
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const filename = `${String(d.getDate()).padStart(2, '0')}-${months[d.getMonth()]}-${d.getFullYear()}.txt`;
+
+  const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded ${filename}`);
+}
+
+function openWorkspace() {
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+    chrome.tabs.create({ url: chrome.runtime.getURL('worklog.html') });
+  } else {
+    window.open('../worklog.html', '_blank');
+  }
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("worklog_theme", theme);
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.set({ worklog_theme: theme });
+  }
+  const icon = document.getElementById("themeIcon");
+  if (icon) {
+    icon.innerHTML = theme === "dark" 
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>' 
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  }
+}
+
+function showToast(msg) {
+  const container = document.getElementById("toastContainer");
+  const box = document.createElement("div");
+  box.className = "toast-box";
+  box.innerHTML = `
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span>${escapeHTML(msg)}</span>
+  `;
+  container.appendChild(box);
+  setTimeout(() => {
+    box.style.opacity = '0';
+    box.style.transform = 'translateY(8px)';
+    setTimeout(() => box.remove(), 200);
+  }, 2200);
+}
+
+function getTodayKey() {
+  const d = new Date();
+  return formatInputDate(d);
+}
+
+function formatInputDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function getWeekBounds(dateStr) {
+  const parts = dateStr.split('-');
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const start = new Date(d.setDate(diff));
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return {
+    start: formatInputDate(start),
+    end: formatInputDate(end)
+  };
+}
+
+function escapeHTML(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+
+async function syncWithDiskTasks(specificDate) {
+  if (!window.DailyLogLocalSync) return;
+  try {
+    const isConn = await window.DailyLogLocalSync.isConnected();
+    if (!isConn) return;
+
+    const targetDate = specificDate || currentFilterDate;
+
+    // 1. Direct fetch for targetDate file (instant display for selected day)
+    if (typeof window.DailyLogLocalSync.readTasksFromDate === 'function') {
+      const dayResult = await window.DailyLogLocalSync.readTasksFromDate(targetDate);
+      if (dayResult && dayResult.tasks && dayResult.tasks.length > 0) {
+        let dayMerged = 0;
+        dayResult.tasks.forEach(dt => {
+          const match = tasks.find(t =>
+            t.date === dt.date &&
+            (t.description || t.text || '').trim().toLowerCase() === (dt.description || dt.text || '').trim().toLowerCase()
+          );
+          if (!match) {
+            tasks.push(dt);
+            dayMerged++;
+          }
+        });
+
+        if (dayMerged > 0) {
+          localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ worklog_tasks: tasks });
+          }
+          populateModuleDropdown();
+          renderTasks();
+          showToast('Loaded ' + dayMerged + ' tasks from ' + targetDate + ' journal');
+        }
+      }
+    }
+
+    // 2. Background month sync for Week / All views
+    if (typeof window.DailyLogLocalSync.readAllTasksForMonth === 'function') {
+      const diskTasks = await window.DailyLogLocalSync.readAllTasksForMonth(targetDate);
+      if (diskTasks && diskTasks.length > 0) {
+        let mergedCount = 0;
+        diskTasks.forEach(dt => {
+          const match = tasks.find(t =>
+            t.date === dt.date &&
+            (t.description || t.text || '').trim().toLowerCase() === (dt.description || dt.text || '').trim().toLowerCase()
+          );
+          if (!match) {
+            tasks.push(dt);
+            mergedCount++;
+          }
+        });
+
+        if (mergedCount > 0) {
+          localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ worklog_tasks: tasks });
+          }
+          populateModuleDropdown();
+          renderTasks();
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[DailyLog] syncWithDiskTasks notice:', err);
+  }
+}

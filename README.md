@@ -50,7 +50,7 @@
 3. Click the **"Load unpacked"** button.
 4. Browse to and select this folder:
    ```
-   D:\Personal\daily-task-tracker-extension
+   D:\Personal\dailyLog-extension
    ```
 5. Pin the **DailyLog** extension icon to your toolbar.
 6. Click the icon to launch the popup or press **`Alt + Shift + T`**!
@@ -61,7 +61,7 @@
 ## 📁 Project Structure
 
 ```
-daily-task-tracker-extension/
+dailyLog-extension/
 ├── manifest.json              # Chrome Manifest V3 configuration
 ├── background.js              # Service worker (shortcuts, context menus, badge)
 ├── icons/                     # Blue Calendar Leaf icons (16, 32, 48, 128px)
@@ -97,10 +97,10 @@ When you are ready to publish the extension publicly:
    - Sign in with your Google account and complete developer registration.
 
 2. **Package the Extension**:
-   - Select all files inside `D:\Personal\daily-task-tracker-extension` and compress them into a `.zip` archive (make sure `manifest.json` is in the root of the zip).
+   - Select all files inside `D:\Personal\dailyLog-extension` and compress them into a `.zip` archive (make sure `manifest.json` is in the root of the zip).
    - Or run PowerShell:
      ```powershell
-     Compress-Archive -Path "D:\Personal\daily-task-tracker-extension\*" -DestinationPath "D:\Personal\DailyLog-v1.0.0.zip"
+     Compress-Archive -Path "D:\Personal\dailyLog-extension\*" -DestinationPath "D:\Personal\DailyLog-v1.0.0.zip"
      ```
 
 3. **Upload & Store Listing**:

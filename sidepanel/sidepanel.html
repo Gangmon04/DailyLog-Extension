@@ -353,6 +353,149 @@
         </div>
       </div>
     </div>
+
+    <!-- Quick Feature Guide In-Sidebar Modal -->
+    <div class="modal-overlay" id="quickGuideModalOverlay" style="display: none;">
+      <div class="modal-card guide-modal-card">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <div class="guide-title-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="font-size: 13px; font-weight: 700; margin: 0;">DailyLog Feature Guide</h3>
+              <span style="font-size: 10.5px; color: var(--text-muted);">Quick Cheat-Sheet</span>
+            </div>
+          </div>
+          <button id="btnCloseQuickGuideX" class="btn-close-modal" title="Close">&times;</button>
+        </div>
+
+        <div class="modal-body guide-modal-body">
+          <div class="guide-feature-list">
+
+            <!-- 1. Quick Capture -->
+            <div class="guide-item">
+              <div class="guide-icon icon-add">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+              <div class="guide-content">
+                <div class="guide-heading">
+                  <strong>Quick Add & Tag</strong>
+                  <span class="guide-badge">Enter ↵</span>
+                </div>
+                <p>Type task and press Enter. Prefix with <code>PMS: Task</code> or <code>[PMS] Task</code> to auto-route into any project module.</p>
+              </div>
+            </div>
+
+            <!-- 2. Project Modules -->
+            <div class="guide-item">
+              <div class="guide-icon icon-mod">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <div class="guide-content">
+                <div class="guide-heading">
+                  <strong>Project Modules</strong>
+                  <span class="guide-badge">Dropdown & ✎</span>
+                </div>
+                <p>Auto-groups tasks by project. Add new modules in dropdown. Click <code>✎</code> or double-click header to rename anytime.</p>
+              </div>
+            </div>
+
+            <!-- 3. Status Tracking -->
+            <div class="guide-item">
+              <div class="guide-icon icon-stat">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <div class="guide-content">
+                <div class="guide-heading">
+                  <strong>Status & Inline Edit</strong>
+                  <span class="guide-badge">Status Dropdown</span>
+                </div>
+                <p>Pick <em>In Progress</em>, <em>Completed</em>, or <em>Blocked</em>. Click checkbox to mark done. Double-click task to edit in-place.</p>
+              </div>
+            </div>
+
+            <!-- 4. Zero-Cloud Local Sync -->
+            <div class="guide-item">
+              <div class="guide-icon icon-sync">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </div>
+              <div class="guide-content">
+                <div class="guide-heading">
+                  <strong>Local File Auto-Sync</strong>
+                  <span class="guide-badge">D:\Personal\Data</span>
+                </div>
+                <p>Click folder icon in top-nav. Every task auto-syncs directly into daily <code>YYYY-MM-DD.txt</code> files on your hard drive.</p>
+              </div>
+            </div>
+
+            <!-- 5. Voice & Reminders -->
+            <div class="guide-item">
+              <div class="guide-icon icon-bell">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              </div>
+              <div class="guide-content">
+                <div class="guide-heading">
+                  <strong>Daily Reminders & Voice</strong>
+                  <span class="guide-badge">Audio TTS</span>
+                </div>
+                <p>Click bell icon to configure scheduled 9:30 AM & 5:30 PM alerts. Speaks out loud via Chrome Text-to-Speech!</p>
+              </div>
+            </div>
+
+            <!-- 6. 1-Click Standup & Exporters -->
+            <div class="guide-item">
+              <div class="guide-icon icon-copy">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+              </div>
+              <div class="guide-content">
+                <div class="guide-heading">
+                  <strong>Instant Standup & Export</strong>
+                  <span class="guide-badge">Slack / Teams</span>
+                </div>
+                <p>Bottom dock icons: copy Slack-formatted daily standup update, copy raw text journal, or download <code>.txt</code> file.</p>
+              </div>
+            </div>
+
+            <!-- 7. Workspace Dashboard -->
+            <div class="guide-item">
+              <div class="guide-icon icon-dock">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="15" y1="3" x2="15" y2="21"/>
+                </svg>
+              </div>
+              <div class="guide-content">
+                <div class="guide-heading">
+                  <strong>Fullscreen Workspace</strong>
+                  <span class="guide-badge">Full View</span>
+                </div>
+                <p>Click dashboard icon to open complete full-screen view with calendar history, weekly stats, and scratchpad notes.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: space-between;">
+          <a href="#" id="linkFullDocs" class="guide-doc-link" title="Open comprehensive documentation in new tab">Full Docs & User Guide ↗</a>
+          <button type="button" class="btn-primary-action" id="btnCloseQuickGuide">Got it! ✨</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="../shared/storage.js"></script>

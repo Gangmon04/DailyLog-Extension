@@ -227,16 +227,8 @@ function initUI() {
   const btnDl = document.getElementById("btnDownloadTxt");
   if (btnDl) btnDl.addEventListener("click", downloadJournalFile);
 
-  // Help & User Guide Documentation
-  const openHelpDoc = () => {
-    if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.create({ url: chrome.runtime.getURL('help.html') });
-    } else {
-      window.open('../help.html', '_blank');
-    }
-  };
-  const btnHelp = document.getElementById("btnHelpDoc");
-  if (btnHelp) btnHelp.addEventListener("click", openHelpDoc);
+  // Quick Feature Guide Modal
+  initQuickGuideModal();
 
   // Workspace Launcher
   const btnDash = document.getElementById("btnOpenDashboard");
@@ -1566,6 +1558,54 @@ async function initReminderModal() {
       updateFormState(settings);
       closeModal();
       showToast('Reminder preferences saved!', 'success');
+    });
+  }
+}
+
+/* ========================================================
+   QUICK FEATURE GUIDE IN-POPUP MODAL
+   ======================================================== */
+
+function initQuickGuideModal() {
+  const btnHelp = document.getElementById("btnHelpDoc");
+  const modal = document.getElementById("quickGuideModalOverlay");
+  const btnClose = document.getElementById("btnCloseQuickGuide");
+  const btnCloseX = document.getElementById("btnCloseQuickGuideX");
+  const linkFull = document.getElementById("linkFullDocs");
+
+  if (!modal) return;
+
+  const openGuide = (e) => {
+    if (e) e.preventDefault();
+    modal.style.display = "flex";
+  };
+
+  const closeGuide = () => {
+    modal.style.display = "none";
+  };
+
+  if (btnHelp) btnHelp.addEventListener("click", openGuide);
+  if (btnClose) btnClose.addEventListener("click", closeGuide);
+  if (btnCloseX) btnCloseX.addEventListener("click", closeGuide);
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeGuide();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.style.display === "flex") {
+      closeGuide();
+    }
+  });
+
+  if (linkFull) {
+    linkFull.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.create({ url: chrome.runtime.getURL('help.html') });
+      } else {
+        window.open('../help.html', '_blank');
+      }
     });
   }
 }

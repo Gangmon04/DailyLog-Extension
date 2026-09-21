@@ -124,6 +124,67 @@
           Add
         </button>
       </div>
+      <div class="input-controls-row">
+        <!-- Custom Module Dropdown -->
+        <div class="custom-select-wrap" id="moduleCustomSelectWrap">
+          <button type="button" class="custom-select-trigger" id="moduleDropdownTrigger" title="Target Project / Module">
+            <svg class="trigger-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--brand-primary)">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="trigger-label" id="moduleSelectedLabel">PMS</span>
+            <svg class="trigger-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          
+          <div class="custom-select-popover" id="moduleDropdownPopover" hidden>
+            <div class="custom-select-items" id="moduleDropdownItems"></div>
+            <div class="custom-select-divider"></div>
+            <button type="button" class="custom-select-add-btn" id="btnAddNewModule">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>New Module...</span>
+            </button>
+          </div>
+          <input type="hidden" id="moduleSelect" value="PMS">
+        </div>
+
+        <!-- Custom Status Dropdown -->
+        <div class="custom-select-wrap" id="statusCustomSelectWrap">
+          <button type="button" class="custom-select-trigger" id="statusDropdownTrigger" title="Task Status">
+            <span class="status-indicator-dot dot-inprogress" id="statusTriggerDot"></span>
+            <span class="trigger-label" id="statusSelectedLabel">In Progress</span>
+            <svg class="trigger-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          <div class="custom-select-popover" id="statusDropdownPopover" hidden>
+            <div class="custom-select-items" id="statusDropdownItems">
+              <div class="custom-select-option active" data-value="In Progress">
+                <span class="status-indicator-dot dot-inprogress"></span>
+                <span class="option-text">In Progress</span>
+                <svg class="option-check" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="custom-select-option" data-value="Completed">
+                <span class="status-indicator-dot dot-completed"></span>
+                <span class="option-text">Completed</span>
+                <svg class="option-check" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="custom-select-option" data-value="Blocked">
+                <span class="status-indicator-dot dot-blocked"></span>
+                <span class="option-text">Blocked</span>
+                <svg class="option-check" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="statusSelect" value="In Progress">
+        </div>
+
+        <span class="hint-key">Press Enter ↵</span>
+      </div>
     </div>
 
     <!-- Task List (Grouped by Module) -->
@@ -185,22 +246,21 @@
       <div class="modal-card">
         <div class="modal-header">
           <div class="modal-title-group">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="modal-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="modal-icon">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
-            <h3>Daily Task Reminders</h3>
+            <h3>Daily Reminders</h3>
           </div>
           <button id="btnCloseReminderModal" class="btn-close-modal" title="Close">&times;</button>
         </div>
 
         <div class="modal-body">
-          <p class="modal-subtitle">Get scheduled desktop alerts to plan morning goals and wrap up your daily work log on disk.</p>
-
+          <!-- Main Toggle -->
           <div class="reminder-toggle-row">
             <div class="toggle-info">
-              <strong>Enable Daily Reminders</strong>
-              <span>Turn desktop reminder banners on or off</span>
+              <strong>Enable Reminders</strong>
+              <span>Scheduled morning and evening notifications</span>
             </div>
             <label class="switch">
               <input type="checkbox" id="chkRemindersEnabled" checked>
@@ -209,77 +269,78 @@
           </div>
 
           <div class="reminder-inputs-group" id="reminderInputsGroup">
-            <div class="form-row">
-              <label for="reminderMorningTime">
-                <span class="row-icon">☀️</span> Morning Planning Prompt:
-              </label>
-              <input type="time" id="reminderMorningTime" class="time-input" value="09:30">
-            </div>
-
-            <div class="form-row">
-              <label for="reminderEveningTime">
-                <span class="row-icon">📋</span> Evening Wrap-up & Sync:
-              </label>
-              <input type="time" id="reminderEveningTime" class="time-input" value="17:30">
-            </div>
-
-            <div class="form-row checkbox-row">
-              <label class="custom-checkbox-label">
-                <input type="checkbox" id="chkReminderWeekdays" checked>
-                Weekdays only (Monday &ndash; Friday)
-              </label>
-            </div>
-
-            <div class="form-row checkbox-row">
-              <label class="custom-checkbox-label">
-                <input type="checkbox" id="chkReminderVoice" checked>
-                🔊 Enable Voice Notifications (Speak aloud)
-              </label>
-            </div>
-
-            <!-- Voice Customization Options -->
-            <div class="voice-custom-panel" id="voiceCustomPanel">
-              <div class="form-row">
-                <label for="selVoiceName">
-                  <span class="row-icon">🗣️</span> System Voice:
-                </label>
-                <select id="selVoiceName" class="select-voice">
-                  <option value="">Default System Voice</option>
-                </select>
+            <!-- Schedule Section -->
+            <div class="rem-section-title">Schedule</div>
+            <div class="rem-card">
+              <div class="rem-row">
+                <span class="rem-row-label">Morning check-in</span>
+                <div class="rem-time-12h">
+                  <input type="text" id="reminderMorningTimeVal" class="rem-time-val" value="09:30" maxlength="5" placeholder="09:30" spellcheck="false">
+                  <div class="rem-ampm-toggle" id="ampmMorning">
+                    <button type="button" class="rem-ampm-btn active" data-period="AM">AM</button>
+                    <button type="button" class="rem-ampm-btn" data-period="PM">PM</button>
+                  </div>
+                  <input type="hidden" id="reminderMorningTime" value="09:30">
+                </div>
               </div>
-
-              <div class="form-row">
-                <label for="rngVoiceRate">
-                  <span class="row-icon">⚡</span> Speed: <span id="lblVoiceRate" class="rate-badge">1.0x</span>
-                </label>
-                <input type="range" id="rngVoiceRate" min="0.7" max="1.5" step="0.1" value="1.0" class="range-slider">
+              <div class="rem-divider"></div>
+              <div class="rem-row">
+                <span class="rem-row-label">Evening wrap-up</span>
+                <div class="rem-time-12h">
+                  <input type="text" id="reminderEveningTimeVal" class="rem-time-val" value="05:30" maxlength="5" placeholder="05:30" spellcheck="false">
+                  <div class="rem-ampm-toggle" id="ampmEvening">
+                    <button type="button" class="rem-ampm-btn" data-period="AM">AM</button>
+                    <button type="button" class="rem-ampm-btn active" data-period="PM">PM</button>
+                  </div>
+                  <input type="hidden" id="reminderEveningTime" value="17:30">
+                </div>
+              </div>
+              <div class="rem-divider"></div>
+              <div class="rem-row">
+                <span class="rem-row-label">Weekdays only (Mon &ndash; Fri)</span>
+                <input type="checkbox" id="chkReminderWeekdays" class="rem-checkbox" checked>
               </div>
             </div>
-          </div>
 
-          <div class="modal-test-section">
-            <div class="test-buttons-group" style="display: flex; gap: 6px;">
-              <button type="button" id="btnTestNotification" class="btn-secondary-action" title="Send desktop alert">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                Test Alert
-              </button>
-              <button type="button" id="btnTestVoice" class="btn-secondary-action" title="Hear voice announcement aloud">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                </svg>
-                Test Voice
-              </button>
+            <!-- Voice Section -->
+            <div class="rem-section-title">Voice Announcements</div>
+            <div class="rem-card">
+              <div class="rem-row">
+                <span class="rem-row-label">Speak reminders aloud</span>
+                <input type="checkbox" id="chkReminderVoice" class="rem-checkbox" checked>
+              </div>
+
+              <div class="voice-custom-panel" id="voiceCustomPanel">
+                <div class="rem-divider"></div>
+                <div class="rem-row">
+                  <span class="rem-row-label">Voice</span>
+                  <select id="selVoiceName" class="rem-select">
+                    <option value="">Default System Voice</option>
+                  </select>
+                </div>
+                <div class="rem-divider"></div>
+                <div class="rem-row">
+                  <span class="rem-row-label">Speed</span>
+                  <div class="rem-speed-wrap">
+                    <span id="lblVoiceRate" class="rem-speed-label">1.0x</span>
+                    <input type="range" id="rngVoiceRate" min="0.7" max="1.5" step="0.1" value="1.0" class="rem-slider">
+                  </div>
+                </div>
+              </div>
             </div>
-            <span id="testNotifFeedback" class="test-feedback"></span>
           </div>
         </div>
 
         <div class="modal-footer">
-          <button type="button" id="btnCancelReminder" class="btn-ghost">Cancel</button>
-          <button type="button" id="btnSaveReminders" class="btn-primary-action">Save Reminders</button>
+          <div class="modal-footer-actions">
+            <button type="button" id="btnTestNotification" class="btn-footer-secondary" title="Test desktop alert">Test Alert</button>
+            <button type="button" id="btnTestVoice" class="btn-footer-secondary" title="Test voice aloud">Test Voice</button>
+            <span id="testNotifFeedback" class="test-feedback"></span>
+          </div>
+          <div class="modal-footer-main">
+            <button type="button" id="btnCancelReminder" class="btn-ghost">Cancel</button>
+            <button type="button" id="btnSaveReminders" class="btn-primary-action">Save</button>
+          </div>
         </div>
       </div>
     </div>

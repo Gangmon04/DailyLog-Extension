@@ -6,7 +6,7 @@
 let tasks = [];
 let currentFilterDate = getTodayKey();
 let activeView = 'today';
-let knownModules = new Set(['General Tasks']);
+let knownModules = new Set(['PMS', 'General Tasks']);
 let collapsedModules = new Set();
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -202,20 +202,8 @@ function initUI() {
     }
   });
 
-  // Module dropdown change
-  const moduleSelect = document.getElementById("moduleSelect");
-  if (moduleSelect) moduleSelect.addEventListener("change", (e) => {
-    if (e.target.value === "+ New Module...") {
-      const custom = prompt("Enter new Project / Module name:");
-      if (custom && custom.trim()) {
-        const cleanName = custom.trim();
-        knownModules.add(cleanName);
-        repopulateModuleSelect(cleanName);
-      } else {
-        moduleSelect.value = "General Tasks";
-      }
-    }
-  });
+  // Custom Dropdowns (Module & Status)
+  initCustomDropdowns();
 
   // Dock Exporters
   document.getElementById("btnCopyStandup").addEventListener("click", copyStandupReport);
@@ -428,26 +416,161 @@ function initNotes() {
   });
 }
 
-function repopulateModuleSelect(selectedVal) {
-  const sel = document.getElementById("moduleSelect");
-  if (!sel) return;
-  sel.innerHTML = '';
-  
-  knownModules.forEach(mod => {
-    const opt = document.createElement("option");
-    opt.value = mod;
-    opt.textContent = mod;
-    sel.appendChild(opt);
+function populateModuleDropdown(selectedVal) {
+  const container = document.getElementById("moduleDropdownItems");
+  if (!container) return;
+  const current = selectedVal || (document.getElementById("moduleSelect") ? document.getElementById("moduleSelect").value : "PMS");
+
+  if (!knownModules.has("PMS")) knownModules.add("PMS");
+  if (!knownModules.has("General Tasks")) knownModules.add("General Tasks");
+
+  tasks.forEach(t => {
+    const m = t.name || t.module;
+    if (m && m.trim()) knownModules.add(m.trim());
   });
 
-  const optNew = document.createElement("option");
-  optNew.value = "+ New Module...";
-  optNew.textContent = "+ Add New Module...";
-  sel.appendChild(optNew);
+  container.innerHTML = "";
+  knownModules.forEach(mod => {
+    const opt = document.createElement("div");
+    opt.className = "custom-select-option" + (mod === current ? " active" : "");
+    opt.dataset.value = mod;
+    opt.innerHTML = `
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--brand-primary); flex-shrink: 0;">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span class="option-text">${escapeHtml(mod)}</span>
+      <svg class="option-check" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    `;
+    opt.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setCustomSelectedModule(mod);
+      closeAllDropdowns();
+    });
+    container.appendChild(opt);
+  });
+}
 
-  if (selectedVal) {
-    sel.value = selectedVal;
+const repopulateModuleSelect = populateModuleDropdown;
+
+function setCustomSelectedModule(modName) {
+  if (!modName) return;
+  const clean = modName.trim();
+  knownModules.add(clean);
+  const hiddenInput = document.getElementById("moduleSelect");
+  if (hiddenInput) hiddenInput.value = clean;
+  const label = document.getElementById("moduleSelectedLabel");
+  if (label) label.textContent = clean;
+  populateModuleDropdown(clean);
+}
+
+function setCustomSelectedStatus(statusVal) {
+  if (!statusVal) return;
+  const hiddenInput = document.getElementById("statusSelect");
+  if (hiddenInput) hiddenInput.value = statusVal;
+  const label = document.getElementById("statusSelectedLabel");
+  if (label) label.textContent = statusVal;
+
+  const dot = document.getElementById("statusTriggerDot");
+  if (dot) {
+    dot.className = "status-indicator-dot " + (
+      statusVal === "Completed" ? "dot-completed" :
+      statusVal === "Blocked" ? "dot-blocked" : "dot-inprogress"
+    );
   }
+
+  const options = document.querySelectorAll("#statusDropdownItems .custom-select-option");
+  options.forEach(opt => {
+    opt.classList.toggle("active", opt.dataset.value === statusVal);
+  });
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll(".custom-select-wrap").forEach(wrap => {
+    wrap.classList.remove("open");
+    const pop = wrap.querySelector(".custom-select-popover");
+    if (pop) {
+      pop.hidden = true;
+      pop.style.display = "none";
+    }
+  });
+}
+
+function initCustomDropdowns() {
+  const modWrap = document.getElementById("moduleCustomSelectWrap");
+  const modTrigger = document.getElementById("moduleDropdownTrigger");
+  const modPopover = document.getElementById("moduleDropdownPopover");
+  const btnAddMod = document.getElementById("btnAddNewModule");
+
+  if (modTrigger && modPopover && modWrap) {
+    modTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = modWrap.classList.contains("open");
+      closeAllDropdowns();
+      if (!isOpen) {
+        populateModuleDropdown();
+        modWrap.classList.add("open");
+        modPopover.hidden = false;
+        modPopover.style.display = "flex";
+      }
+    });
+  }
+
+  if (btnAddMod) {
+    btnAddMod.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeAllDropdowns();
+      const newName = prompt("Enter new module / project name (e.g. Front Desk / Billing):");
+      if (newName && newName.trim()) {
+        const clean = newName.trim();
+        setCustomSelectedModule(clean);
+        closeAllDropdowns();
+        showToast(`Target module set to "${clean}"`);
+      }
+    });
+  }
+
+  const statWrap = document.getElementById("statusCustomSelectWrap");
+  const statTrigger = document.getElementById("statusDropdownTrigger");
+  const statPopover = document.getElementById("statusDropdownPopover");
+  const statOptions = document.querySelectorAll("#statusDropdownItems .custom-select-option");
+
+  if (statTrigger && statPopover && statWrap) {
+    statTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = statWrap.classList.contains("open");
+      closeAllDropdowns();
+      if (!isOpen) {
+        statWrap.classList.add("open");
+        statPopover.hidden = false;
+        statPopover.style.display = "flex";
+      }
+    });
+  }
+
+  statOptions.forEach(opt => {
+    opt.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setCustomSelectedStatus(opt.dataset.value);
+      closeAllDropdowns();
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".custom-select-wrap")) {
+      closeAllDropdowns();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeAllDropdowns();
+    }
+  });
+
+  populateModuleDropdown("PMS");
+  closeAllDropdowns();
 }
 
 function submitTask() {
@@ -455,7 +578,18 @@ function submitTask() {
   let text = input.value.trim();
   if (!text) return;
 
-  let moduleName = "General Tasks";
+  // Handle module-only input like "PMS:" or "General Tasks:" or "[PMS]"
+  const moduleOnlyMatch = text.match(/^\[([^\]]+)\]$/) || text.match(/^([A-Za-z0-9_\-\s]{2,25}):$/);
+  if (moduleOnlyMatch) {
+    const newMod = moduleOnlyMatch[1].trim();
+    setCustomSelectedModule(newMod);
+    input.value = "";
+    showToast(`Target module set to "${newMod}"`);
+    return;
+  }
+
+  const moduleEl = document.getElementById("moduleSelect");
+  let moduleName = (moduleEl && moduleEl.value && moduleEl.value !== "+ New Module...") ? moduleEl.value : "PMS";
 
   // Smart module parsing if user types "[Module] Task" or "Module: Task"
   const bracketMatch = text.match(/^\[(.*?)\]\s*(.*)$/);
@@ -463,18 +597,15 @@ function submitTask() {
   if (bracketMatch) {
     moduleName = bracketMatch[1].trim();
     text = bracketMatch[2].trim();
+    setCustomSelectedModule(moduleName);
   } else if (colonMatch) {
     moduleName = colonMatch[1].trim();
     text = colonMatch[2].trim();
-  }
-
-  const moduleEl = document.getElementById("moduleSelect");
-  if (moduleEl && moduleEl.value && moduleEl.value !== "+ New Module..." && moduleName === "General Tasks") {
-    moduleName = moduleEl.value;
+    setCustomSelectedModule(moduleName);
   }
 
   const statusEl = document.getElementById("statusSelect");
-  const status = (statusEl && statusEl.value) ? statusEl.value : "Completed";
+  const status = (statusEl && statusEl.value) ? statusEl.value : "In Progress";
 
   const dateEl = document.getElementById("dateInput");
   const date = (dateEl && dateEl.value) ? dateEl.value : currentFilterDate;
@@ -493,10 +624,9 @@ function submitTask() {
   persistTasks();
 
   input.value = "";
-  knownModules.add(moduleName);
-  populateModuleDropdown();
+  populateModuleDropdown(moduleName);
 
-  showToast("Task added successfully");
+  showToast(`Task added to ${moduleName}`);
   renderTasks();
 }
 
@@ -627,6 +757,7 @@ function renderTasks() {
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
         </svg>
         <span class="group-title">${escapeHtml(moduleName)}</span>
+        <button class="group-rename-btn" title="Rename module (e.g. to PMS)" type="button">✎</button>
       </div>
       <div class="group-header-actions">
         <span class="group-badge">${groups[moduleName].length}</span>
@@ -635,6 +766,29 @@ function renderTasks() {
         </button>
       </div>
     `;
+
+    const renameBtn = header.querySelector(".group-rename-btn");
+    if (renameBtn) {
+      renameBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const newMod = prompt(`Rename module "${moduleName}" to:`, moduleName);
+        if (newMod && newMod.trim() && newMod.trim() !== moduleName) {
+          const cleanMod = newMod.trim();
+          tasks.forEach(t => {
+            const m = t.module || t.name || 'General Tasks';
+            if (m === moduleName) {
+              t.name = cleanMod;
+              t.module = cleanMod;
+            }
+          });
+          knownModules.add(cleanMod);
+          persistTasks();
+          repopulateModuleSelect(cleanMod);
+          renderTasks();
+          showToast(`Module renamed to "${cleanMod}"`);
+        }
+      });
+    }
 
     const taskList = document.createElement("div");
     taskList.className = "group-tasks-list";
@@ -1086,10 +1240,123 @@ async function initReminderModal() {
     }
   }
 
+  function setup12HourPicker(hiddenId) {
+    const hiddenInp = document.getElementById(hiddenId);
+    const textInp = document.getElementById(hiddenId + 'Val');
+    const ampmWrap = document.getElementById(hiddenId.replace('reminder', 'ampm'));
+    if (!hiddenInp || !textInp || !ampmWrap) return null;
+
+    const btnAM = ampmWrap.querySelector('[data-period="AM"]');
+    const btnPM = ampmWrap.querySelector('[data-period="PM"]');
+
+    function updateHidden() {
+      let raw = textInp.value.trim();
+      if (!raw) raw = '09:00';
+      let parts = raw.split(':');
+      let h = parseInt(parts[0], 10) || 9;
+      let m = parseInt(parts[1], 10) || 0;
+      if (h > 12) h = 12;
+      if (h < 1) h = 12;
+      if (m > 59) m = 59;
+      if (m < 0) m = 0;
+
+      const activePeriod = ampmWrap.querySelector('.rem-ampm-btn.active')?.dataset.period || 'AM';
+      let h24 = h;
+      if (activePeriod === 'PM' && h24 < 12) h24 += 12;
+      if (activePeriod === 'AM' && h24 === 12) h24 = 0;
+
+      hiddenInp.value = `${String(h24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function setFrom24(time24) {
+      if (!time24) time24 = '09:30';
+      const str = String(time24).trim().toUpperCase();
+      const isPM = str.includes('PM');
+      const isAM = str.includes('AM');
+      const clean = str.replace(/[^0-9:]/g, '');
+      const parts = clean.split(':');
+      let h = parseInt(parts[0], 10);
+      let m = parseInt(parts[1], 10) || 0;
+      if (isNaN(h)) h = 9;
+
+      let period = 'AM';
+      if (isPM) {
+        period = 'PM';
+      } else if (isAM) {
+        period = 'AM';
+      } else {
+        period = h >= 12 ? 'PM' : 'AM';
+      }
+
+      let h12 = h % 12;
+      if (h12 === 0) h12 = 12;
+
+      textInp.value = `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      if (btnAM && btnPM) {
+        btnAM.classList.toggle('active', period === 'AM');
+        btnPM.classList.toggle('active', period === 'PM');
+      }
+      updateHidden();
+    }
+
+    btnAM?.addEventListener('click', () => {
+      btnAM.classList.add('active');
+      btnPM?.classList.remove('active');
+      updateHidden();
+    });
+
+    btnPM?.addEventListener('click', () => {
+      btnPM.classList.add('active');
+      btnAM?.classList.remove('active');
+      updateHidden();
+    });
+
+    textInp.addEventListener('input', () => {
+      let v = textInp.value.replace(/[^0-9:]/g, '');
+      textInp.value = v;
+      updateHidden();
+    });
+
+    textInp.addEventListener('blur', () => {
+      let v = textInp.value.replace(/[^0-9]/g, '');
+      if (v.length === 1 || v.length === 2) {
+        let h = parseInt(v, 10);
+        if (h > 12) h = 12;
+        if (h < 1) h = 1;
+        textInp.value = `${String(h).padStart(2, '0')}:00`;
+      } else if (v.length === 3) {
+        let h = parseInt(v.slice(0, 1), 10);
+        let m = parseInt(v.slice(1), 10);
+        textInp.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      } else if (v.length >= 4) {
+        let h = parseInt(v.slice(0, 2), 10);
+        let m = parseInt(v.slice(2, 4), 10);
+        if (h > 12) h = 12;
+        if (h < 1) h = 12;
+        if (m > 59) m = 59;
+        textInp.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
+      updateHidden();
+    });
+
+    return { setFrom24, updateHidden };
+  }
+
+  const morningPicker = setup12HourPicker('reminderMorningTime');
+  const eveningPicker = setup12HourPicker('reminderEveningTime');
+
   function updateFormState(s) {
     if (chkEnabled) chkEnabled.checked = !!s.enabled;
-    if (inpMorning) inpMorning.value = s.morningTime || '09:30';
-    if (inpEvening) inpEvening.value = s.eveningTime || '17:30';
+    if (morningPicker) {
+      morningPicker.setFrom24(s.morningTime || '09:30');
+    } else if (inpMorning) {
+      inpMorning.value = s.morningTime || '09:30';
+    }
+    if (eveningPicker) {
+      eveningPicker.setFrom24(s.eveningTime || '17:30');
+    } else if (inpEvening) {
+      inpEvening.value = s.eveningTime || '17:30';
+    }
     if (chkWeekdays) chkWeekdays.checked = s.weekdaysOnly !== false;
     if (chkVoice) chkVoice.checked = s.voiceEnabled !== false;
 
@@ -1133,7 +1400,11 @@ async function initReminderModal() {
     });
   }
 
-  btnReminders.addEventListener('click', () => {
+  btnReminders.addEventListener('click', async () => {
+    if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.getReminderSettings) {
+      settings = await DailyLogStorage.getReminderSettings();
+    }
+    updateFormState(settings);
     modal.style.display = 'flex';
     if (testFeedback) testFeedback.textContent = '';
   });
@@ -1174,7 +1445,7 @@ async function initReminderModal() {
           }
         });
         if (testFeedback) {
-          testFeedback.textContent = '🔊 Speaking aloud...';
+          testFeedback.textContent = 'Speaking aloud...';
           setTimeout(() => { if (testFeedback) testFeedback.textContent = ''; }, 3500);
         }
       } else {
@@ -1185,6 +1456,8 @@ async function initReminderModal() {
 
   if (btnSave) {
     btnSave.addEventListener('click', async () => {
+      morningPicker?.updateHidden();
+      eveningPicker?.updateHidden();
       const updated = {
         enabled: chkEnabled.checked,
         morningTime: inpMorning.value || '09:30',

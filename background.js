@@ -115,11 +115,11 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 
   if (alarm.name === 'reminder-snooze') {
-    triggerVoiceReminder("DailyLog reminder: Here is your reminder to update and sync your daily tasks.");
+    triggerVoiceReminder("Snooze is up! Time to sync your tasks.");
     await showNotification({
       id: 'dailylog-snooze-' + Date.now(),
-      title: 'DailyLog — Task Reminder ⏰',
-      message: 'Here is your reminder to update and sync your daily tasks!',
+      title: 'DailyLog — Time to Wrap Up ⏰',
+      message: '30 minutes are up! Time to sync your daily tasks.',
       buttons: [{ title: 'Open DailyLog' }, { title: 'Snooze 30m' }]
     });
     return;
@@ -219,10 +219,17 @@ async function scheduleDailyReminders() {
 
 function getNextAlarmTime(timeStr, weekdaysOnly) {
   if (!timeStr) return null;
-  const parts = timeStr.split(':');
-  const targetHour = parseInt(parts[0], 10);
-  const targetMin = parseInt(parts[1], 10);
-  if (isNaN(targetHour) || isNaN(targetMin)) return null;
+  const str = String(timeStr).trim().toUpperCase();
+  const isPM = str.includes('PM');
+  const isAM = str.includes('AM');
+  const clean = str.replace(/[^0-9:]/g, '');
+  const parts = clean.split(':');
+  let targetHour = parseInt(parts[0], 10);
+  const targetMin = parseInt(parts[1], 10) || 0;
+  if (isNaN(targetHour)) return null;
+
+  if (isPM && targetHour < 12) targetHour += 12;
+  if (isAM && targetHour === 12) targetHour = 0;
 
   const now = new Date();
   const target = new Date();
@@ -284,11 +291,11 @@ async function handleMorningReminder() {
   let voiceText = '';
 
   if (stats.total === 0) {
-    message = "Good morning! You haven't logged any tasks for today yet. Click to plan your daily goals in your journal!";
-    voiceText = "Good morning! You haven't added any tasks for today yet. Time to plan your daily goals in DailyLog.";
+    message = "Your task list is empty today. Drop in a couple of goals!";
+    voiceText = "Rise and shine! Your log is completely empty. What are we conquering today?";
   } else {
-    message = `Good morning! You have ${stats.total} task${stats.total > 1 ? 's' : ''} planned for today (${stats.pending} pending). Ready to get started?`;
-    voiceText = `Good morning! You have ${stats.total} task${stats.total > 1 ? 's' : ''} planned for today with ${stats.pending} pending.`;
+    message = `You have ${stats.pending} pending task${stats.pending > 1 ? 's' : ''} on deck. Ready to roll?`;
+    voiceText = `Morning boss! You've got ${stats.pending} task${stats.pending > 1 ? 's' : ''} on deck. Let's make them disappear!`;
   }
 
   triggerVoiceReminder(voiceText);
@@ -310,14 +317,14 @@ async function handleEveningReminder() {
   let voiceText = '';
 
   if (stats.total === 0) {
-    message = "Your daily worklog file is empty for today. Take a moment to log your accomplishments before wrapping up!";
-    voiceText = "Reminder: Your daily worklog file is empty for today. Take a moment to record your accomplishments in DailyLog.";
+    message = "Your log is totally blank! Quick, record what you worked on before signing off.";
+    voiceText = "Did you work today? Your log is totally blank! Quick, write something down.";
   } else if (stats.pending > 0) {
-    message = `You have ${stats.pending} pending task${stats.pending > 1 ? 's' : ''} remaining today. Don't forget to mark items done and sync your journal!`;
-    voiceText = `DailyLog reminder: You have ${stats.pending} pending task${stats.pending > 1 ? 's' : ''} remaining today. Don't forget to sync your journal.`;
+    message = `You still have ${stats.pending} task${stats.pending > 1 ? 's' : ''} pending. Check them off and sync!`;
+    voiceText = `Clock's ticking! Still ${stats.pending} task${stats.pending > 1 ? 's' : ''} hanging. Check them off and wrap up!`;
   } else {
-    message = `Great job! All ${stats.total} tasks completed today. Your daily work journal is fully up to date! 🎉`;
-    voiceText = "Great job! All tasks completed today. Your daily work journal is fully up to date.";
+    message = `All ${stats.total} tasks completed today! Your daily journal is 100% in sync.`;
+    voiceText = "Boom! All tasks crushed today. You're officially free!";
   }
 
   triggerVoiceReminder(voiceText);
@@ -485,13 +492,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message?.type === 'TEST_NOTIFICATION') {
     Promise.all([getTodayTaskStats(), getStorage(['reminder_settings'])]).then(([stats, sData]) => {
-      triggerVoiceReminder("Test successful! DailyLog reminders and voice announcements are fully active.");
+      triggerVoiceReminder("Mic check! Your crispy reminders are locked and loaded.");
       showNotification({
         id: 'dailylog-test-' + Date.now(),
-        title: 'DailyLog — Test Reminder 🔔',
+        title: 'DailyLog — Test Alert 🔔',
         message: stats.total > 0
-          ? `Test successful! Today you have ${stats.total} tasks (${stats.pending} pending). Daily reminders are fully configured!`
-          : "Test successful! You haven't logged any tasks for today yet. Daily reminders are fully configured!",
+          ? `All set! You have ${stats.total} tasks on deck (${stats.pending} pending).`
+          : "All set! Reminders and voice announcements are active.",
         buttons: [{ title: 'Open DailyLog' }, { title: 'Snooze 30m' }]
       });
     });
@@ -502,8 +509,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === 'TEST_VOICE') {
     getTodayTaskStats().then(stats => {
       const voiceText = stats.total > 0
-        ? `This is a test voice announcement from DailyLog. Today you have ${stats.total} tasks with ${stats.pending} pending.`
-        : "This is a test of your DailyLog voice notification. Voice reminders are active!";
+        ? `Mic check! You've got ${stats.pending} task${stats.pending > 1 ? 's' : ''} on deck. Voice is loud and clear!`
+        : "Mic check! Your crispy reminders are locked and loaded.";
       speakVoiceReminder(voiceText, message.options || {});
     });
     sendResponse({ success: true });

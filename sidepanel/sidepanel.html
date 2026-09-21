@@ -133,13 +133,13 @@
           <div class="custom-select-popover" id="moduleDropdownPopover" hidden>
             <div class="custom-select-items" id="moduleDropdownItems"></div>
             <div class="custom-select-divider"></div>
-            <button type="button" class="custom-select-add-btn" id="btnAddNewModule">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <div class="custom-select-add-row">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--brand-primary); flex-shrink: 0;">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              <span>New Module...</span>
-            </button>
+              <input type="text" class="custom-select-add-input" id="inputNewModuleInline" placeholder="Add module & ↵" autocomplete="off">
+            </div>
           </div>
           <input type="hidden" id="moduleSelect" value="PMS">
         </div>

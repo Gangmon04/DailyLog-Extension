@@ -509,8 +509,7 @@ function closeAllDropdowns() {
 function initCustomDropdowns() {
   const modWrap = document.getElementById("moduleCustomSelectWrap");
   const modTrigger = document.getElementById("moduleDropdownTrigger");
-  const modPopover = document.getElementById("moduleDropdownPopover");
-  const btnAddMod = document.getElementById("btnAddNewModule");
+  const inputNewMod = document.getElementById("inputNewModuleInline");
 
   if (modTrigger && modPopover && modWrap) {
     modTrigger.addEventListener("click", (e) => {
@@ -522,20 +521,26 @@ function initCustomDropdowns() {
         modWrap.classList.add("open");
         modPopover.hidden = false;
         modPopover.style.display = "flex";
+        if (inputNewMod) setTimeout(() => inputNewMod.focus(), 50);
       }
     });
   }
 
-  if (btnAddMod) {
-    btnAddMod.addEventListener("click", (e) => {
-      e.stopPropagation();
-      closeAllDropdowns();
-      const newName = prompt("Enter new module / project name (e.g. Front Desk / Billing):");
-      if (newName && newName.trim()) {
-        const clean = newName.trim();
-        setCustomSelectedModule(clean);
+  if (inputNewMod) {
+    inputNewMod.addEventListener("click", (e) => e.stopPropagation());
+    inputNewMod.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        const clean = inputNewMod.value.trim();
+        if (clean) {
+          setCustomSelectedModule(clean);
+          inputNewMod.value = "";
+          closeAllDropdowns();
+          showToast(`Module set to "${clean}"`);
+        }
+      } else if (e.key === "Escape") {
         closeAllDropdowns();
-        showToast(`Target module set to "${clean}"`);
       }
     });
   }
@@ -771,12 +776,27 @@ function renderTasks() {
     const listEl = card.querySelector(`#groupList_${moduleName.replace(/\W/g, '_')}`);
     const renameBtn = card.querySelector(".group-rename-btn");
 
-    if (renameBtn) {
-      renameBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const newMod = prompt(`Rename module "${moduleName}" to:`, moduleName);
-        if (newMod && newMod.trim() && newMod.trim() !== moduleName) {
-          const cleanMod = newMod.trim();
+    function startModuleRename() {
+      const titleSpan = card.querySelector(".group-title");
+      if (!titleSpan || titleSpan.classList.contains("editing")) return;
+      titleSpan.classList.add("editing");
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "group-title-inline-input";
+      input.value = moduleName;
+      input.style.width = Math.max(120, moduleName.length * 9 + 25) + "px";
+
+      titleSpan.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let committed = false;
+      const commitRename = () => {
+        if (committed) return;
+        committed = true;
+        const cleanMod = input.value.trim();
+        if (cleanMod && cleanMod !== moduleName) {
           tasks.forEach(t => {
             const m = t.name || t.module || 'General Tasks';
             if (m === moduleName) {
@@ -784,11 +804,49 @@ function renderTasks() {
               t.module = cleanMod;
             }
           });
+          knownModules.add(cleanMod);
           persistTasks();
-          populateModuleDropdown();
+          populateModuleDropdown(cleanMod);
           renderTasks();
           showToast(`Renamed to "${cleanMod}"`);
+        } else {
+          input.replaceWith(titleSpan);
+          titleSpan.classList.remove("editing");
         }
+      };
+
+      const cancelRename = () => {
+        if (committed) return;
+        committed = true;
+        input.replaceWith(titleSpan);
+        titleSpan.classList.remove("editing");
+      };
+
+      input.addEventListener("click", (e) => e.stopPropagation());
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commitRename();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          cancelRename();
+        }
+      });
+      input.addEventListener("blur", commitRename);
+    }
+
+    if (renameBtn) {
+      renameBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        startModuleRename();
+      });
+    }
+
+    const titleSpanEl = card.querySelector(".group-title");
+    if (titleSpanEl) {
+      titleSpanEl.addEventListener("dblclick", (e) => {
+        e.stopPropagation();
+        startModuleRename();
       });
     }
 

@@ -29,12 +29,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+function isHeaderArtifact(text) {
+  if (!text) return false;
+  const t = text.trim();
+  return /^(today's task:?|weekly report.*?|\d+[\.\)]\s*.*?:|[A-Za-z0-9_\-\s&/()]{2,50}:)$/i.test(t);
+}
+
 async function loadState() {
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     return new Promise((resolve) => {
       chrome.storage.local.get(['worklog_tasks', 'worklog_theme'], (res) => {
         let loaded = (res.worklog_tasks && Array.isArray(res.worklog_tasks)) ? res.worklog_tasks : [];
-        tasks = loaded.filter(t => !(t.id >= 1 && t.id <= 10) && !(t.id >= 101 && t.id <= 110));
+        // Clean out any sample seed IDs and header lines mistakenly saved as tasks
+        tasks = loaded.filter(t => !(t.id >= 1 && t.id <= 10) && !(t.id >= 101 && t.id <= 110) && !isHeaderArtifact(t.description || t.text || ''));
         chrome.storage.local.set({ worklog_tasks: tasks });
 
         if (res.worklog_theme) {
@@ -46,7 +53,7 @@ async function loadState() {
   } else {
     const local = localStorage.getItem("worklog_tasks");
     let loaded = local ? JSON.parse(local) : [];
-    tasks = loaded.filter(t => !(t.id >= 1 && t.id <= 10) && !(t.id >= 101 && t.id <= 110));
+    tasks = loaded.filter(t => !(t.id >= 1 && t.id <= 10) && !(t.id >= 101 && t.id <= 110) && !isHeaderArtifact(t.description || t.text || ''));
     localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
     
     const savedTheme = localStorage.getItem("worklog_theme") || "dark";
@@ -726,6 +733,7 @@ function renderTasks() {
   } else {
     filtered = [...tasks];
   }
+  filtered = filtered.filter(t => !isHeaderArtifact(t.description || t.text || ''));
 
   // Update Progress banner
   const total = filtered.length;
@@ -1173,28 +1181,32 @@ async function syncWithDiskTasks(specificDate) {
     // 1. Direct fetch for targetDate file (instant display for selected day)
     if (typeof window.DailyLogLocalSync.readTasksFromDate === 'function') {
       const dayResult = await window.DailyLogLocalSync.readTasksFromDate(targetDate);
-      if (dayResult && dayResult.tasks && dayResult.tasks.length > 0) {
-        let dayMerged = 0;
-        dayResult.tasks.forEach(dt => {
-          const match = tasks.find(t =>
-            t.date === dt.date &&
-            (t.description || t.text || '').trim().toLowerCase() === (dt.description || dt.text || '').trim().toLowerCase()
-          );
-          if (!match) {
-            tasks.push(dt);
-            dayMerged++;
-          }
+      if (dayResult && dayResult.tasks) {
+        // Build map of existing statuses for targetDate to preserve user checkboxes
+        const existingStatusMap = new Map();
+        tasks.filter(t => t.date === targetDate).forEach(t => {
+          const desc = (t.description || t.text || '').trim().toLowerCase();
+          if (desc) existingStatusMap.set(desc, t.status);
         });
 
-        if (dayMerged > 0) {
-          localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
-          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.set({ worklog_tasks: tasks });
-          }
-          populateModuleDropdown();
-          renderTasks();
-          showToast('Loaded ' + dayMerged + ' tasks from ' + targetDate + ' journal');
+        const otherDateTasks = tasks.filter(t => t.date !== targetDate);
+        const updatedDayTasks = dayResult.tasks
+          .filter(dt => !isHeaderArtifact(dt.description || dt.text || ''))
+          .map(dt => {
+            const desc = (dt.description || dt.text || '').trim().toLowerCase();
+            if (existingStatusMap.has(desc)) {
+              dt.status = existingStatusMap.get(desc);
+            }
+            return dt;
+          });
+
+        tasks = [...otherDateTasks, ...updatedDayTasks];
+        localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ worklog_tasks: tasks });
         }
+        populateModuleDropdown();
+        renderTasks();
       }
 
       // Also load scratchpad notes if any
@@ -1215,19 +1227,30 @@ async function syncWithDiskTasks(specificDate) {
     if (typeof window.DailyLogLocalSync.readAllTasksForMonth === 'function') {
       const diskTasks = await window.DailyLogLocalSync.readAllTasksForMonth(targetDate);
       if (diskTasks && diskTasks.length > 0) {
-        let mergedCount = 0;
+        let changed = false;
+        const beforeLen = tasks.length;
+        tasks = tasks.filter(t => !isHeaderArtifact(t.description || t.text || ''));
+        if (tasks.length !== beforeLen) changed = true;
+
         diskTasks.forEach(dt => {
+          if (isHeaderArtifact(dt.description || dt.text || '')) return;
           const match = tasks.find(t =>
             t.date === dt.date &&
             (t.description || t.text || '').trim().toLowerCase() === (dt.description || dt.text || '').trim().toLowerCase()
           );
-          if (!match) {
+          if (match) {
+            if (match.module !== dt.module || match.name !== dt.name) {
+              match.module = dt.module;
+              match.name = dt.name;
+              changed = true;
+            }
+          } else {
             tasks.push(dt);
-            mergedCount++;
+            changed = true;
           }
         });
 
-        if (mergedCount > 0) {
+        if (changed) {
           localStorage.setItem("worklog_tasks", JSON.stringify(tasks));
           if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
             chrome.storage.local.set({ worklog_tasks: tasks });

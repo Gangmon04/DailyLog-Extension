@@ -193,24 +193,47 @@ function parseJournalText(text, dateStr) {
       continue;
     }
 
-    // Check if line is a bullet item (*, -, •) or numbered item (1., 2.)
-    const isBulletItem = /^([-*•]|\d+[\.\)])\s+/.test(trimmed);
+    // Helper: lookahead to check if subsequent non-empty line starts with a bullet item
+    let nextIsBullet = false;
+    for (let j = i + 1; j < lines.length; j++) {
+      const nextTrimmed = lines[j].trim();
+      if (!nextTrimmed) continue;
+      nextIsBullet = /^[-*•]\s+/.test(nextTrimmed);
+      break;
+    }
 
-    if (!isBulletItem) {
-      // If it's not a bullet item and is relatively short, it's a module header!
-      // (e.g. "Employee Wellness", "PMS", "1. PMS - My Desk:", "Add more sections:")
-      const cleanMod = trimmed.replace(/^(\d+[\.\)]\s*)?/, '').replace(/:$/, '').trim();
-      if (cleanMod.length < 50 && !/[.!?]$/.test(cleanMod)) {
+    // Check if line is a module header:
+    // 1. Any line ending with a colon ':' (e.g. "1. PMS (Visit Group Tabs):", "PMS:", "- PMS - My Desk:")
+    // 2. A non-bullet line followed by bullet items (e.g. "1. PMS" or "Employee Wellness")
+    // 3. Short non-bullet line without sentence punctuation (< 50 chars)
+    const isExplicitColonHeader = trimmed.endsWith(':') && !trimmed.startsWith('- ') && !trimmed.startsWith('* ');
+    const isBulletSubheader = trimmed.endsWith(':') && /^[-*•]\s+/.test(trimmed) && trimmed.length < 70;
+    const isFollowedByBullets = !/^[-*•]\s+/.test(trimmed) && nextIsBullet;
+    const isShortStandaloneHeader = !/^[-*•]\s+/.test(trimmed) && !/^\d+[\.\)]\s+/.test(trimmed) && trimmed.length < 45 && !/[.!?]$/.test(trimmed);
+
+    if (isExplicitColonHeader || isBulletSubheader || isFollowedByBullets || isShortStandaloneHeader) {
+      const cleanMod = trimmed
+        .replace(/^([-*•]|\d+[\.\)])\s*/, '')
+        .replace(/^\[|\]$/g, '')
+        .replace(/:$/, '')
+        .trim();
+      if (cleanMod && cleanMod.length < 60) {
         currentModule = cleanMod;
         continue;
       }
     }
 
-    // Clean task description
+    // Task description extraction
     let taskText = trimmed.replace(/^([-*•]|\d+[\.\)])\s*/, '').trim();
 
+    // If taskText still ends with colon and looks like a header, treat as module header instead of task
+    if (/^[A-Za-z0-9_\-\s&/()]{2,50}:$/.test(taskText)) {
+      currentModule = taskText.replace(/:$/, '').trim();
+      continue;
+    }
+
     // Detect status
-    let status = 'In Progress';
+    let status = 'Completed';
     if (/\[x\]/i.test(taskText)) {
       status = 'Completed';
       taskText = taskText.replace(/\[[xX]\]\s*/, '');
@@ -226,9 +249,6 @@ function parseJournalText(text, dateStr) {
     } else if (/[-–—]\s*blocked\s*$/i.test(taskText)) {
       status = 'Blocked';
       taskText = taskText.replace(/[-–—]\s*blocked\s*$/i, '');
-    } else {
-      // Completed by default for historical logs or descriptive bullet items
-      status = 'Completed';
     }
 
     taskText = taskText.trim();

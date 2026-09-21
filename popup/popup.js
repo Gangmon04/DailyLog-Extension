@@ -98,7 +98,8 @@ function initUI() {
     cmdDateInput.addEventListener("change", (e) => {
       if (e.target.value) {
         currentFilterDate = e.target.value;
-        if (datePicker) datePicker.value = currentFilterDate;
+        const picker = document.getElementById("filterDatePicker");
+        if (picker) picker.value = currentFilterDate;
         activeView = 'today';
         document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b.dataset.view === 'today'));
         updateDateDisplay();
@@ -113,7 +114,8 @@ function initUI() {
     btnToday.addEventListener("click", () => {
       currentFilterDate = getTodayKey();
       const dInp = document.getElementById("dateInput"); if (dInp) dInp.value = currentFilterDate;
-      if (datePicker) datePicker.value = currentFilterDate;
+      const picker = document.getElementById("filterDatePicker");
+      if (picker) picker.value = currentFilterDate;
       activeView = 'today';
       document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b.dataset.view === 'today'));
       updateDateDisplay();
@@ -126,17 +128,29 @@ function initUI() {
   renderTasks();
 
   // Events
-  document.getElementById("btnSubmitTask").addEventListener("click", addTask);
-  document.getElementById("taskTextInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") addTask();
-  });
+  const btnSubmit = document.getElementById("btnSubmitTask");
+  if (btnSubmit) btnSubmit.addEventListener("click", addTask);
 
-  document.getElementById("btnPrevDay").addEventListener("click", () => {
-    shiftDate(-1);
-  });
-  document.getElementById("btnNextDay").addEventListener("click", () => {
-    shiftDate(1);
-  });
+  const taskTextInput = document.getElementById("taskTextInput");
+  if (taskTextInput) {
+    taskTextInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") addTask();
+    });
+  }
+
+  const btnPrev = document.getElementById("btnPrevDay");
+  if (btnPrev) {
+    btnPrev.addEventListener("click", () => {
+      shiftDate(-1);
+    });
+  }
+
+  const btnNext = document.getElementById("btnNextDay");
+  if (btnNext) {
+    btnNext.addEventListener("click", () => {
+      shiftDate(1);
+    });
+  }
 
   // Segment Buttons
   document.querySelectorAll(".seg-btn").forEach(btn => {
@@ -191,19 +205,27 @@ function initUI() {
     });
   }
 
-  document.getElementById("btnThemeToggle").addEventListener("click", () => {
-    const cur = document.documentElement.getAttribute("data-theme") || "dark";
-    const next = cur === "dark" ? "light" : "dark";
-    applyTheme(next);
-  });
+  const btnTheme = document.getElementById("btnThemeToggle");
+  if (btnTheme) {
+    btnTheme.addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme") || "dark";
+      const next = cur === "dark" ? "light" : "dark";
+      applyTheme(next);
+    });
+  }
 
   // Reminders
   initReminderModal();
 
   // Exporters
-  document.getElementById("btnCopyStandup").addEventListener("click", copyStandupReport);
-  document.getElementById("btnCopyTxt").addEventListener("click", copyPlainTextJournal);
-  document.getElementById("btnDownloadTxt").addEventListener("click", downloadJournalFile);
+  const btnStandup = document.getElementById("btnCopyStandup");
+  if (btnStandup) btnStandup.addEventListener("click", copyStandupReport);
+
+  const btnCopy = document.getElementById("btnCopyTxt");
+  if (btnCopy) btnCopy.addEventListener("click", copyPlainTextJournal);
+
+  const btnDl = document.getElementById("btnDownloadTxt");
+  if (btnDl) btnDl.addEventListener("click", downloadJournalFile);
 
   // Help & User Guide Documentation
   const openHelpDoc = () => {
@@ -217,8 +239,11 @@ function initUI() {
   if (btnHelp) btnHelp.addEventListener("click", openHelpDoc);
 
   // Workspace Launcher
-  document.getElementById("btnOpenDashboard").addEventListener("click", openWorkspace);
-  document.getElementById("btnLaunchFull").addEventListener("click", openWorkspace);
+  const btnDash = document.getElementById("btnOpenDashboard");
+  if (btnDash) btnDash.addEventListener("click", openWorkspace);
+
+  const btnLaunch = document.getElementById("btnLaunchFull");
+  if (btnLaunch) btnLaunch.addEventListener("click", openWorkspace);
 
     // Sidebar Launcher (Chrome Side Panel API - User Gesture Synchronous)
   function openSidePanelAction() {
@@ -520,6 +545,7 @@ function closeAllDropdowns() {
 function initCustomDropdowns() {
   const modWrap = document.getElementById("moduleCustomSelectWrap");
   const modTrigger = document.getElementById("moduleDropdownTrigger");
+  const modPopover = document.getElementById("moduleDropdownPopover");
   const inputNewMod = document.getElementById("inputNewModuleInline");
 
   if (modTrigger && modPopover && modWrap) {

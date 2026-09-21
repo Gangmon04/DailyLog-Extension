@@ -87,7 +87,8 @@ function initUI() {
     cmdDateInput.addEventListener("change", (e) => {
       if (e.target.value) {
         currentFilterDate = e.target.value;
-        if (datePicker) datePicker.value = currentFilterDate;
+        const picker = document.getElementById("filterDatePicker");
+        if (picker) picker.value = currentFilterDate;
         activeView = 'today';
         document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b.dataset.view === 'today'));
         updateDateDisplay();
@@ -103,7 +104,8 @@ function initUI() {
     btnToday.addEventListener("click", () => {
       currentFilterDate = getTodayKey();
       const dInp = document.getElementById("dateInput"); if (dInp) dInp.value = currentFilterDate;
-      if (datePicker) datePicker.value = currentFilterDate;
+      const picker = document.getElementById("filterDatePicker");
+      if (picker) picker.value = currentFilterDate;
       activeView = 'today';
       document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b.dataset.view === 'today'));
       updateDateDisplay();
@@ -115,8 +117,11 @@ function initUI() {
   updateDateDisplay();
 
   // Prev / Next Day
-  document.getElementById("btnPrevDay").addEventListener("click", () => shiftDate(-1));
-  document.getElementById("btnNextDay").addEventListener("click", () => shiftDate(1));
+  const btnPrev = document.getElementById("btnPrevDay");
+  if (btnPrev) btnPrev.addEventListener("click", () => shiftDate(-1));
+
+  const btnNext = document.getElementById("btnNextDay");
+  if (btnNext) btnNext.addEventListener("click", () => shiftDate(1));
 
   // View Segments
   document.querySelectorAll(".seg-btn").forEach(btn => {
@@ -181,7 +186,8 @@ function initUI() {
     });
   }
 
-  document.getElementById("btnThemeToggle").addEventListener("click", toggleTheme);
+  const btnTheme = document.getElementById("btnThemeToggle");
+  if (btnTheme) btnTheme.addEventListener("click", toggleTheme);
 
   // Open Full Dashboard
   const openDash = () => {
@@ -202,24 +208,37 @@ function initUI() {
   const btnHelp = document.getElementById("btnHelpDoc");
   if (btnHelp) btnHelp.addEventListener("click", openHelpDoc);
 
-  document.getElementById("btnOpenDashboard").addEventListener("click", openDash);
-  document.getElementById("btnLaunchFull").addEventListener("click", openDash);
+  const btnDash = document.getElementById("btnOpenDashboard");
+  if (btnDash) btnDash.addEventListener("click", openDash);
+
+  const btnLaunch = document.getElementById("btnLaunchFull");
+  if (btnLaunch) btnLaunch.addEventListener("click", openDash);
 
   // Add Task submit
-  document.getElementById("btnSubmitTask").addEventListener("click", submitTask);
-  document.getElementById("taskTextInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      submitTask();
-    }
-  });
+  const btnSubmit = document.getElementById("btnSubmitTask");
+  if (btnSubmit) btnSubmit.addEventListener("click", submitTask);
+
+  const taskTextInput = document.getElementById("taskTextInput");
+  if (taskTextInput) {
+    taskTextInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        submitTask();
+      }
+    });
+  }
 
   // Custom Dropdowns (Module & Status)
   initCustomDropdowns();
 
   // Dock Exporters
-  document.getElementById("btnCopyStandup").addEventListener("click", copyStandupReport);
-  document.getElementById("btnCopyTxt").addEventListener("click", copyDailyTxt);
-  document.getElementById("btnDownloadTxt").addEventListener("click", downloadDailyTxt);
+  const btnStandup = document.getElementById("btnCopyStandup");
+  if (btnStandup) btnStandup.addEventListener("click", copyStandupReport);
+
+  const btnCopy = document.getElementById("btnCopyTxt");
+  if (btnCopy) btnCopy.addEventListener("click", copyDailyTxt);
+
+  const btnDl = document.getElementById("btnDownloadTxt");
+  if (btnDl) btnDl.addEventListener("click", downloadDailyTxt);
 
   // Reminders
   initReminderModal();
@@ -510,6 +529,7 @@ function closeAllDropdowns() {
 function initCustomDropdowns() {
   const modWrap = document.getElementById("moduleCustomSelectWrap");
   const modTrigger = document.getElementById("moduleDropdownTrigger");
+  const modPopover = document.getElementById("moduleDropdownPopover");
   const inputNewMod = document.getElementById("inputNewModuleInline");
 
   if (modTrigger && modPopover && modWrap) {

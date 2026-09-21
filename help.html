@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DailyLog - User Guide & Feature Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="icons/icon128.png">
+  <style>
+    :root {
+      --bg-base: #0a0e17;
+      --bg-surface: #111827;
+      --bg-card: #162032;
+      --bg-card-hover: #1c2940;
+      --bg-input: #0e1524;
+      --border-color: #243248;
+      --border-subtle: #1a2436;
+      --border-focus: #3b82f6;
+
+      --text-main: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --brand-primary: #2563eb;
+      --brand-hover: #1d4ed8;
+      --brand-glow: rgba(37, 99, 235, 0.25);
+      --accent-gradient: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+
+      --status-prog: #f59e0b;
+      --status-comp: #10b981;
+      --status-block: #ef4444;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-input: #f8fafc;
+      --border-color: #e2e8f0;
+      --border-subtle: #edf2f7;
+      --border-focus: #1e40af;
+
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+
+      --brand-primary: #1e40af;
+      --brand-hover: #1e3a8a;
+      --brand-glow: rgba(30, 64, 175, 0.15);
+      --accent-gradient: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-main);
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Top Navigation Header */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(12px);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--brand-glow);
+      color: var(--brand-primary);
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(37, 99, 235, 0.3);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-wrap svg {
+      position: absolute;
+      left: 10px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px 6px 32px;
+      font-size: 13px;
+      color: var(--text-main);
+      outline: none;
+      width: 220px;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--border-focus);
+      width: 280px;
+      box-shadow: 0 0 0 2px var(--brand-glow);
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-focus);
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: #ffffff;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 2px 8px var(--brand-glow);
+    }
+
+    /* Main Layout */
+    .docs-container {
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 36px 24px 64px;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 36px;
+      flex: 1;
+    }
+
+    /* Sidebar Navigation */
+    .docs-sidebar {
+      position: sticky;
+      top: 84px;
+      height: fit-content;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .toc-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding-left: 8px;
+    }
+
+    .toc-link {
+      display: block;
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .toc-link:hover, .toc-link.active {
+      color: var(--brand-primary);
+      background: var(--bg-card);
+    }
+
+    /* Content Area */
+    .docs-content {
+      min-width: 0;
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 250px;
+      height: 100%;
+      background: radial-gradient(circle at top right, var(--brand-glow), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, var(--text-main) 60%, var(--brand-primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      max-width: 650px;
+      line-height: 1.6;
+    }
+
+    /* Documentation Section */
+    .doc-section {
+      margin-bottom: 48px;
+      scroll-margin-top: 100px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .section-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: var(--brand-glow);
+      color: var(--brand-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+
+    /* Grid of Feature Cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .guide-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .guide-card:hover {
+      border-color: var(--border-focus);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .guide-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .guide-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Code Snippets & Examples */
+    .code-block {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      color: #38bdf8;
+      margin: 12px 0;
+      overflow-x: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .code-block code {
+      font-family: inherit;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .badge-pms {
+      background: rgba(37, 99, 235, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(37, 99, 235, 0.3);
+    }
+
+    .badge-amber {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+
+    .badge-green {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+
+    .badge-red {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    /* Steps list */
+    .step-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+    }
+
+    .step-number {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--brand-glow);
+      color: var(--brand-primary);
+      font-weight: 700;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Shortcuts Table */
+    .shortcuts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .shortcuts-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .shortcuts-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .shortcuts-table tr:hover td {
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+
+    kbd {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: var(--text-main);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Footer */
+    .docs-footer {
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 24px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+
+    @media (max-width: 768px) {
+      .docs-container {
+        grid-template-columns: 1fr;
+      }
+      .docs-sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="top-nav">
+    <a href="#" class="brand-section">
+      <img src="icons/icon128.png" alt="DailyLog Logo" class="brand-logo">
+      <span class="brand-title">DailyLog</span>
+      <span class="brand-badge">User Guide</span>
+    </a>
+
+    <div class="header-actions">
+      <div class="search-input-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="helpSearchInput" class="search-input" placeholder="Search guide (e.g. PMS, sync, voice)...">
+      </div>
+
+      <button id="btnToggleTheme" class="btn-action" title="Toggle Dark/Light Mode">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <span>Theme</span>
+      </button>
+
+      <a href="worklog.html" target="_blank" class="btn-action btn-primary">
+        <span>Open Dashboard</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- Docs Container -->
+  <div class="docs-container">
+
+    <!-- Table of Contents Sidebar -->
+    <nav class="docs-sidebar">
+      <div class="toc-title">Guide Navigation</div>
+      <a href="#quickstart" class="toc-link">⚡ Quickstart</a>
+      <a href="#modules" class="toc-link">📁 Module Organization (PMS)</a>
+      <a href="#smart-prefixes" class="toc-link">⚡ Smart Prefix Typing</a>
+      <a href="#inline-editing" class="toc-link">✎ Inline Editing & Renaming</a>
+      <a href="#local-sync" class="toc-link">🔄 Local File Auto-Sync</a>
+      <a href="#reminders-voice" class="toc-link">🔔 Reminders & Voice TTS</a>
+      <a href="#exporters" class="toc-link">📋 Standup Exporters</a>
+      <a href="#surfaces" class="toc-link">🖥️ Three Work Surfaces</a>
+      <a href="#shortcuts" class="toc-link">⌨️ Shortcuts Cheatsheet</a>
+    </nav>
+
+    <!-- Content Area -->
+    <main class="docs-content" id="docsMainContent">
+
+      <!-- Hero Banner -->
+      <section class="hero-banner">
+        <h1 class="hero-title">DailyLog Documentation & How-To</h1>
+        <p class="hero-desc">
+          DailyLog is a developer-focused, offline-first Chrome extension that automatically organizes your daily work by modules (e.g. <strong>PMS</strong>), auto-syncs with your local journal files (<span style="font-family: monospace;">D:\Personal\Data</span>), provides crisp spoken reminders, and generates 1-click standup reports.
+        </p>
+      </section>
+
+      <!-- Section 1: Quickstart -->
+      <section id="quickstart" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h2 class="section-title">Quickstart (30 Seconds)</h2>
+        </div>
+        <p class="section-desc">Get started logging tasks right from your browser toolbar:</p>
+
+        <ul class="step-list">
+          <li class="step-item">
+            <span class="step-number">1</span>
+            <div><strong>Open the Extension:</strong> Click the DailyLog leaf icon in your toolbar, or press <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd>.</div>
+          </li>
+          <li class="step-item">
+            <span class="step-number">2</span>
+            <div><strong>Choose or Type Your Module:</strong> Select <strong>PMS</strong> from the module dropdown, or type directly with prefix e.g. <span style="font-family: monospace; color: #60a5fa;">PMS: Compare Dashboard</span>.</div>
+          </li>
+          <li class="step-item">
+            <span class="step-number">3</span>
+            <div><strong>Press Enter:</strong> The task is instantly created and auto-synced to your local file!</div>
+          </li>
+          <li class="step-item">
+            <span class="step-number">4</span>
+            <div><strong>Dock to Sidebar:</strong> Click the sidebar icon (<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>) in the header to keep DailyLog open beside your code or web apps.</div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Section 2: Modules & Custom Dropdowns -->
+      <section id="modules" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h2 class="section-title">Module Organization (PMS & Custom Modules)</h2>
+        </div>
+        <p class="section-desc">Keep your tasks neatly categorized by project or feature area instead of one big cluttered list.</p>
+
+        <div class="cards-grid">
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span class="badge-pill badge-pms">Custom Module Dropdown</span>
+            </div>
+            <p>Click the module button right under the input field. A sleek floating menu appears with all registered modules (<span class="badge-pill badge-pms">PMS</span>, etc.).</p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>+ Add Module Inline (No Dialogs)</span>
+            </div>
+            <p>At the bottom of the module dropdown, type any custom module name in the input box and press <kbd>Enter</kbd>. It adds and selects it immediately without native browser popups.</p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span class="badge-pill badge-amber">Status Dropdown</span>
+            </div>
+            <p>Switch between <span class="badge-pill badge-amber">🟡 In Progress</span>, <span class="badge-pill badge-green">🟢 Completed</span>, and <span class="badge-pill badge-red">🔴 Blocked</span> with glowing visual indicators.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Smart Prefix Typing -->
+      <section id="smart-prefixes" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          </div>
+          <h2 class="section-title">Smart Prefix Typing (Fastest Method ⚡)</h2>
+        </div>
+        <p class="section-desc">You never need to touch the mouse to change modules. Just type inline:</p>
+
+        <div class="code-block">
+          <code>PMS: Compare Dashboard and Portal for Conflict Appointments</code>
+        </div>
+        <div class="code-block">
+          <code>[PMS] Review prescription batch verification</code>
+        </div>
+
+        <p class="section-desc" style="margin-top: 10px;">
+          <strong>Quick Module Switch:</strong> Typing just <code>PMS:</code> and pressing <kbd>Enter</kbd> switches the active module dropdown to <strong>PMS</strong> for all upcoming tasks without creating a blank bullet!
+        </p>
+      </section>
+
+      <!-- Section 4: Inline Editing & Renaming -->
+      <section id="inline-editing" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <h2 class="section-title">Inline Editing & 1-Click Group Renaming</h2>
+        </div>
+        <p class="section-desc">Everything can be edited in-place with zero disruptive browser popups:</p>
+
+        <div class="cards-grid">
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>✎ Rename Any Module Header</span>
+            </div>
+            <p>Click the subtle pencil icon (<strong>✎</strong>) next to any group title (e.g. "General Tasks"). It turns into an inline text box! Type <strong>PMS</strong> and hit <kbd>Enter</kbd> &mdash; every task in that group is instantly renamed and re-synced.</p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>Double-Click Task to Edit</span>
+            </div>
+            <p>Double-click any task description (or click the edit pencil icon) to edit the text inline. Hit <kbd>Enter</kbd> to save, or <kbd>Escape</kbd> to cancel.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Local File Auto-Sync -->
+      <section id="local-sync" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </div>
+          <h2 class="section-title">Automatic Local Folder Sync (D:\Personal\Data)</h2>
+        </div>
+        <p class="section-desc">DailyLog connects directly to your local file system using the modern Chrome File System Access API.</p>
+
+        <div class="guide-card" style="margin-bottom: 14px;">
+          <div class="guide-card-header">
+            <span>Folder Directory Hierarchy</span>
+          </div>
+          <div class="code-block" style="color: #4ade80;">
+            <code>D:\Personal\Data\YYYY\MM Month\DD-Mon-YYYY.txt</code>
+          </div>
+          <p>Example: <code>D:\Personal\Data\2026\09 September\21-Sep-2026.txt</code></p>
+        </div>
+
+        <div class="cards-grid">
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>How Auto-Sync Works</span>
+            </div>
+            <p>Every time you add, check off, rename, or delete a task, DailyLog formats it cleanly into your file:</p>
+            <div class="code-block" style="font-size: 11px; color: #cbd5e1;">
+              <code>Today's Task:<br>1. PMS:<br>   - Compare Dashboard and Portal...</code>
+            </div>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>Connecting the Folder</span>
+            </div>
+            <p>Click the folder icon with arrow (<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>) in the header. Select your <code>D:\Personal\Data</code> folder once, and permission persists across browser restarts.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 6: Reminders & Voice TTS -->
+      <section id="reminders-voice" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <h2 class="section-title">Scheduled Reminders & Crispy Voice Notifications</h2>
+        </div>
+        <p class="section-desc">Never forget to plan your morning or wrap up your evening accomplishments.</p>
+
+        <div class="cards-grid">
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>☀️ Morning Check-In (09:30 AM)</span>
+            </div>
+            <p>Checks your log at your set morning time. If empty, sends a notification and speaks a short, funny voice prompt to jumpstart your day!</p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>🌙 Evening Wrap-Up (05:30 PM)</span>
+            </div>
+            <p>Checks pending tasks before you sign off. If all done, congratulates you; if items remain, speaks a crisp nudge to mark them complete.</p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>🎙️ Voice Customization</span>
+            </div>
+            <p>Supports Chrome Text-to-Speech (TTS) with 12-hour AM/PM pill controls, voice selection (David, Zira, Google English), and speed slider (0.8x–1.5x).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 7: Standup Exporters -->
+      <section id="exporters" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          </div>
+          <h2 class="section-title">1-Click Standup & Journal Exporters</h2>
+        </div>
+        <p class="section-desc">Located at the bottom of the popup and sidebar for instant sharing:</p>
+
+        <div class="cards-grid">
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>📋 Copy Standup</span>
+            </div>
+            <p>Generates clean Markdown formatted for Slack, Teams, or email:</p>
+            <div class="code-block" style="font-size: 11px;">
+              <code>*Completed:*<br>• Compare Dashboard...<br><br>*In Progress:*<br>• Review PMS batch...</code>
+            </div>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>📄 Copy .TXT & Download</span>
+            </div>
+            <p>Copies the exact plain text format of your journal file, or downloads a <code>.txt</code> file directly to your Downloads folder.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 8: Three Work Surfaces -->
+      <section id="surfaces" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h2 class="section-title">Three Work Surfaces</h2>
+        </div>
+        <p class="section-desc">Work where and how it suits you best:</p>
+
+        <div class="cards-grid">
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>1. Action Popup</span>
+            </div>
+            <p>Compact 480×590px window accessible via <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> for rapid 5-second task capture.</p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>2. Persistent Side Panel</span>
+            </div>
+            <p>Docks directly to the right side of Chrome. Stays open while switching tabs, browsing portals, or coding.</p>
+          </div>
+
+          <div class="guide-card">
+            <div class="guide-card-header">
+              <span>3. Full Dashboard (worklog.html)</span>
+            </div>
+            <p>Full-screen dashboard with complete calendar history, monthly overview, search filters, and statistics.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 9: Shortcuts Cheatsheet -->
+      <section id="shortcuts" class="doc-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h2 class="section-title">Keyboard Shortcuts Cheatsheet</h2>
+        </div>
+
+        <table class="shortcuts-table">
+          <thead>
+            <tr>
+              <th>Shortcut / Action</th>
+              <th>Where</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd></td>
+              <td>Any tab</td>
+              <td>Instantly open DailyLog popup</td>
+            </tr>
+            <tr>
+              <td><kbd>Enter</kbd></td>
+              <td>Task input</td>
+              <td>Add task to active module</td>
+            </tr>
+            <tr>
+              <td><kbd>Enter</kbd></td>
+              <td>Inline Module Rename</td>
+              <td>Commit module title change</td>
+            </tr>
+            <tr>
+              <td><kbd>Enter</kbd></td>
+              <td>Dropdown Add Input</td>
+              <td>Add and select new module</td>
+            </tr>
+            <tr>
+              <td><kbd>Escape</kbd></td>
+              <td>Anywhere</td>
+              <td>Close open dropdowns or cancel edit</td>
+            </tr>
+            <tr>
+              <td><strong>Double Click</strong></td>
+              <td>Module header</td>
+              <td>Inline rename module title</td>
+            </tr>
+            <tr>
+              <td><strong>Double Click</strong></td>
+              <td>Task text</td>
+              <td>Inline edit task description</td>
+            </tr>
+            <tr>
+              <td><strong>Right-Click Selection</strong></td>
+              <td>Any webpage</td>
+              <td>"Add to Today's Task Log" context menu</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="docs-footer">
+    DailyLog Extension &mdash; 100% Offline &amp; Private. All data is stored locally in your browser and local journal directory.
+  </footer>
+
+  <script>
+    // Theme Synchronization
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ worklog_theme: theme });
+      } else {
+        localStorage.setItem('worklog_theme', theme);
+      }
+    }
+
+    // Load initial theme
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['worklog_theme'], (res) => {
+        if (res.worklog_theme) applyTheme(res.worklog_theme);
+      });
+    } else {
+      const saved = localStorage.getItem('worklog_theme');
+      if (saved) applyTheme(saved);
+    }
+
+    document.getElementById('btnToggleTheme').addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+
+    // Realtime Search Filter
+    const searchInput = document.getElementById('helpSearchInput');
+    const sections = document.querySelectorAll('.doc-section');
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.toLowerCase().trim();
+      sections.forEach(sec => {
+        const text = sec.innerText.toLowerCase();
+        sec.style.display = text.includes(query) ? '' : 'none';
+      });
+    });
+
+    // Scrollspy for sidebar links
+    window.addEventListener('scroll', () => {
+      let currentSecId = '';
+      sections.forEach(sec => {
+        const rect = sec.getBoundingClientRect();
+        if (rect.top <= 120 && rect.bottom >= 120) {
+          currentSecId = sec.id;
+        }
+      });
+      document.querySelectorAll('.toc-link').forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + currentSecId);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 # DailyLog - Task Tracker & Standup Journal
 
-> **A sleek, modern, privacy-first browser extension for developers & professionals to track daily accomplishments, organize work by modules, and generate 1-click Standup, Plain Text, or Markdown updates.**
+> **A sleek, modern, privacy-first browser extension for developers & professionals to track daily accomplishments, organize work by modules (PMS, etc.), and generate 1-click Standup, Plain Text, or Markdown updates.**
+
+📖 **Documentation**: [Complete User Guide & How-To (USER_GUIDE.md)](USER_GUIDE.md) | Interactive In-App Help: `help.html`
 
 ---
 

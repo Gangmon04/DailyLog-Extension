@@ -191,6 +191,17 @@ function initUI() {
       window.open('../worklog.html', '_blank');
     }
   };
+  // Help & User Guide Documentation
+  const openHelpDoc = () => {
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('help.html') });
+    } else {
+      window.open('../help.html', '_blank');
+    }
+  };
+  const btnHelp = document.getElementById("btnHelpDoc");
+  if (btnHelp) btnHelp.addEventListener("click", openHelpDoc);
+
   document.getElementById("btnOpenDashboard").addEventListener("click", openDash);
   document.getElementById("btnLaunchFull").addEventListener("click", openDash);
 

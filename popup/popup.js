@@ -205,6 +205,17 @@ function initUI() {
   document.getElementById("btnCopyTxt").addEventListener("click", copyPlainTextJournal);
   document.getElementById("btnDownloadTxt").addEventListener("click", downloadJournalFile);
 
+  // Help & User Guide Documentation
+  const openHelpDoc = () => {
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.create({ url: chrome.runtime.getURL('help.html') });
+    } else {
+      window.open('../help.html', '_blank');
+    }
+  };
+  const btnHelp = document.getElementById("btnHelpDoc");
+  if (btnHelp) btnHelp.addEventListener("click", openHelpDoc);
+
   // Workspace Launcher
   document.getElementById("btnOpenDashboard").addEventListener("click", openWorkspace);
   document.getElementById("btnLaunchFull").addEventListener("click", openWorkspace);

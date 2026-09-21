@@ -222,6 +222,9 @@ function initUI() {
   document.getElementById("btnCopyTxt").addEventListener("click", copyDailyTxt);
   document.getElementById("btnDownloadTxt").addEventListener("click", downloadDailyTxt);
 
+  // Reminders
+  initReminderModal();
+
   renderTasks();
 }
 
@@ -1002,5 +1005,209 @@ async function syncWithDiskTasks(specificDate) {
     }
   } catch (err) {
     console.warn('[DailyLog] syncWithDiskTasks notice:', err);
+  }
+}
+
+/* ========================================================
+   DAILY REMINDERS MODAL CONTROLLER
+   ======================================================== */
+
+async function initReminderModal() {
+  const btnReminders = document.getElementById("btnReminders");
+  const modal = document.getElementById("reminderModalOverlay");
+  const btnClose = document.getElementById("btnCloseReminderModal");
+  const btnCancel = document.getElementById("btnCancelReminder");
+  const btnSave = document.getElementById("btnSaveReminders");
+  const btnTest = document.getElementById("btnTestNotification");
+  const btnTestVoice = document.getElementById("btnTestVoice");
+  const chkEnabled = document.getElementById("chkRemindersEnabled");
+  const inpMorning = document.getElementById("reminderMorningTime");
+  const inpEvening = document.getElementById("reminderEveningTime");
+  const chkWeekdays = document.getElementById("chkReminderWeekdays");
+  const chkVoice = document.getElementById("chkReminderVoice");
+  const voicePanel = document.getElementById("voiceCustomPanel");
+  const selVoice = document.getElementById("selVoiceName");
+  const rngRate = document.getElementById("rngVoiceRate");
+  const lblRate = document.getElementById("lblVoiceRate");
+  const inputsGroup = document.getElementById("reminderInputsGroup");
+  const dot = document.getElementById("reminderIndicatorDot");
+  const testFeedback = document.getElementById("testNotifFeedback");
+
+  if (!btnReminders || !modal) return;
+
+  // Load existing reminder settings
+  let settings = {
+    enabled: true,
+    morningTime: '09:30',
+    eveningTime: '17:30',
+    weekdaysOnly: true,
+    voiceEnabled: true,
+    voiceName: '',
+    voiceRate: 1.0
+  };
+
+  if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.getReminderSettings) {
+    settings = await DailyLogStorage.getReminderSettings();
+  } else if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    const res = await new Promise(r => chrome.storage.local.get(['reminder_settings'], r));
+    if (res && res.reminder_settings) settings = res.reminder_settings;
+  }
+
+  // Populate installed TTS voices
+  loadAvailableVoices(settings.voiceName);
+
+  function loadAvailableVoices(selectedVoiceName) {
+    if (typeof chrome === 'undefined' || !chrome.tts || typeof chrome.tts.getVoices !== 'function') return;
+    try {
+      chrome.tts.getVoices((voices) => {
+        if (!selVoice || !Array.isArray(voices)) return;
+        selVoice.innerHTML = '<option value="">Default System Voice</option>';
+        const sorted = [...voices].sort((a, b) => {
+          const aEng = (a.lang || '').startsWith('en');
+          const bEng = (b.lang || '').startsWith('en');
+          if (aEng && !bEng) return -1;
+          if (!aEng && bEng) return 1;
+          return (a.voiceName || '').localeCompare(b.voiceName || '');
+        });
+
+        sorted.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.voiceName;
+          const langDisplay = v.lang ? ` (${v.lang})` : '';
+          opt.textContent = `${v.voiceName}${langDisplay}`;
+          if (selectedVoiceName && v.voiceName === selectedVoiceName) {
+            opt.selected = true;
+          }
+          selVoice.appendChild(opt);
+        });
+      });
+    } catch (err) {
+      console.warn('[DailyLog TTS] Failed to fetch voices:', err);
+    }
+  }
+
+  function updateFormState(s) {
+    if (chkEnabled) chkEnabled.checked = !!s.enabled;
+    if (inpMorning) inpMorning.value = s.morningTime || '09:30';
+    if (inpEvening) inpEvening.value = s.eveningTime || '17:30';
+    if (chkWeekdays) chkWeekdays.checked = s.weekdaysOnly !== false;
+    if (chkVoice) chkVoice.checked = s.voiceEnabled !== false;
+
+    if (rngRate) {
+      rngRate.value = s.voiceRate || 1.0;
+      if (lblRate) lblRate.textContent = `${parseFloat(rngRate.value).toFixed(1)}x`;
+    }
+    if (selVoice && s.voiceName) {
+      selVoice.value = s.voiceName;
+    }
+    if (inputsGroup) {
+      inputsGroup.classList.toggle('disabled', !s.enabled);
+    }
+    if (voicePanel) {
+      voicePanel.classList.toggle('disabled', !s.voiceEnabled);
+    }
+    if (dot) {
+      dot.style.display = s.enabled ? 'block' : 'none';
+    }
+  }
+
+  updateFormState(settings);
+
+  if (chkEnabled) {
+    chkEnabled.addEventListener('change', () => {
+      if (inputsGroup) {
+        inputsGroup.classList.toggle('disabled', !chkEnabled.checked);
+      }
+    });
+  }
+
+  if (chkVoice && voicePanel) {
+    chkVoice.addEventListener('change', () => {
+      voicePanel.classList.toggle('disabled', !chkVoice.checked);
+    });
+  }
+
+  if (rngRate && lblRate) {
+    rngRate.addEventListener('input', () => {
+      lblRate.textContent = `${parseFloat(rngRate.value).toFixed(1)}x`;
+    });
+  }
+
+  btnReminders.addEventListener('click', () => {
+    modal.style.display = 'flex';
+    if (testFeedback) testFeedback.textContent = '';
+  });
+
+  function closeModal() {
+    modal.style.display = 'none';
+  }
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  if (btnTest) {
+    btnTest.addEventListener('click', () => {
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ type: 'TEST_NOTIFICATION' });
+        if (testFeedback) {
+          testFeedback.textContent = 'Alert sent!';
+          setTimeout(() => { if (testFeedback) testFeedback.textContent = ''; }, 3500);
+        }
+      } else {
+        if (testFeedback) testFeedback.textContent = 'Desktop alert requires Chrome runtime';
+      }
+    });
+  }
+
+  if (btnTestVoice) {
+    btnTestVoice.addEventListener('click', () => {
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({
+          type: 'TEST_VOICE',
+          options: {
+            voiceName: selVoice ? selVoice.value : '',
+            rate: rngRate ? parseFloat(rngRate.value) : 1.0
+          }
+        });
+        if (testFeedback) {
+          testFeedback.textContent = '🔊 Speaking aloud...';
+          setTimeout(() => { if (testFeedback) testFeedback.textContent = ''; }, 3500);
+        }
+      } else {
+        if (testFeedback) testFeedback.textContent = 'Chrome runtime required';
+      }
+    });
+  }
+
+  if (btnSave) {
+    btnSave.addEventListener('click', async () => {
+      const updated = {
+        enabled: chkEnabled.checked,
+        morningTime: inpMorning.value || '09:30',
+        eveningTime: inpEvening.value || '17:30',
+        weekdaysOnly: chkWeekdays.checked,
+        voiceEnabled: chkVoice ? chkVoice.checked : true,
+        voiceName: selVoice ? selVoice.value : '',
+        voiceRate: rngRate ? parseFloat(rngRate.value) : 1.0
+      };
+
+      if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.saveReminderSettings) {
+        await DailyLogStorage.saveReminderSettings(updated);
+      } else if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ reminder_settings: updated });
+        if (chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({ type: 'UPDATE_REMINDERS' });
+        }
+      }
+
+      settings = updated;
+      updateFormState(settings);
+      closeModal();
+      showToast('Reminder preferences saved!', 'success');
+    });
   }
 }

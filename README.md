@@ -19,6 +19,13 @@
   - **Standup Formatter**: Automatically generates *"What I completed / What I'm working on / Blockers"* formatted for Slack, Teams, or email.
   - **Direct File Download**: 1-click download of daily logs directly to your Downloads folder.
 
+- **Scheduled Daily Reminders & Desktop Notifications**:
+  - Morning Check-in prompt (`09:30`) to plan daily goals when your log is empty.
+  - Evening Wrap-up & Sync prompt (`17:30`) to remind you of pending items and ensure your daily file is saved.
+  - **System Voice Announcements (Chrome TTS)**: Natural spoken reminders with system voice picker (Microsoft David, Zira, Google US English, etc.) and speed slider (0.7x–1.5x).
+  - 1-click **"Open DailyLog"** to open your journal directly from the notification banner, plus **"Snooze 30m"** option.
+  - Weekday filtering (Mon–Fri) with dedicated **"Test Alert"** and **"Test Voice"** preview buttons.
+
 - **Three Surfaces**:
   1. **Quick Capture Popup (`popup/popup.html`)**: Compact 480x590px interface with 1-click sidebar launcher.
   2. **Persistent Right-Side Sidebar (`sidepanel/sidepanel.html`)**: Open alongside your browser tabs for continuous note-taking, scratchpad meeting notes, and task ticking without tab switching.

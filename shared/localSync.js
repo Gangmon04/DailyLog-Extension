@@ -92,7 +92,7 @@ function parseDateForLocalSync(dateStr) {
   const shortMonth = shortMonths[monthIdx] || 'Sep';
   const fileName = String(parseInt(day, 10)).padStart(2, '0') + '-' + shortMonth + '-' + year + '.txt';
 
-  return { year, monthFolderName, fileName };
+  return { year, monthFolderName, fileName, day };
 }
 
 function parseFileNameToDate(fileName) {
@@ -374,7 +374,7 @@ window.DailyLogLocalSync = {
     const hasPerm = await verifyDirPermission(handle, false);
     if (!hasPerm) return { tasks: [], notes: '' };
 
-    const { year, monthFolderName, fileName } = parseDateForLocalSync(dateStr);
+    const { year, monthFolderName, fileName, day } = parseDateForLocalSync(dateStr);
     try {
       const yearDir = await handle.getDirectoryHandle(year);
       let monthDir = null;

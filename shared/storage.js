@@ -91,6 +91,37 @@ const DailyLogStorage = {
     return settings;
   },
 
+  async getReminderSettings() {
+    const data = await this.get(['reminder_settings']);
+    const defaults = {
+      enabled: true,
+      morningTime: '09:30',
+      eveningTime: '17:30',
+      weekdaysOnly: true,
+      voiceEnabled: true,
+      voiceName: '',
+      voiceRate: 1.0,
+      voicePitch: 1.0,
+      notifyMorningEmpty: true,
+      notifyEveningPending: true
+    };
+    const saved = data.reminder_settings || {};
+    return {
+      ...defaults,
+      ...saved
+    };
+  },
+
+  async saveReminderSettings(updates) {
+    const current = await this.getReminderSettings();
+    const reminder_settings = { ...current, ...updates };
+    await this.set({ reminder_settings });
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'UPDATE_REMINDERS' }).catch(() => {});
+    }
+    return reminder_settings;
+  },
+
   async getAllLogs() {
     const data = await this.get(['logs']);
     return data.logs || {};

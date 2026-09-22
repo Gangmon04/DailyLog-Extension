@@ -1591,7 +1591,6 @@ async function initReminderModal() {
 function initQuickGuideModal() {
   const btnHelp = document.getElementById("btnHelpDoc");
   const modal = document.getElementById("quickGuideModalOverlay");
-  const btnClose = document.getElementById("btnCloseQuickGuide");
   const btnCloseX = document.getElementById("btnCloseQuickGuideX");
 
   if (!modal) return;
@@ -1606,7 +1605,6 @@ function initQuickGuideModal() {
   };
 
   if (btnHelp) btnHelp.addEventListener("click", openGuide);
-  if (btnClose) btnClose.addEventListener("click", closeGuide);
   if (btnCloseX) btnCloseX.addEventListener("click", closeGuide);
 
   modal.addEventListener("click", (e) => {

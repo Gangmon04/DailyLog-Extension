@@ -1593,7 +1593,6 @@ function initQuickGuideModal() {
   const modal = document.getElementById("quickGuideModalOverlay");
   const btnClose = document.getElementById("btnCloseQuickGuide");
   const btnCloseX = document.getElementById("btnCloseQuickGuideX");
-  const linkFull = document.getElementById("linkFullDocs");
 
   if (!modal) return;
 
@@ -1619,15 +1618,4 @@ function initQuickGuideModal() {
       closeGuide();
     }
   });
-
-  if (linkFull) {
-    linkFull.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        chrome.tabs.create({ url: chrome.runtime.getURL('help.html') });
-      } else {
-        window.open('../help.html', '_blank');
-      }
-    });
-  }
 }

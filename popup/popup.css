@@ -1395,6 +1395,8 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+  max-height: calc(85vh - 110px);
 }
 
 .modal-subtitle {
@@ -1626,6 +1628,62 @@ input:checked + .slider:before {
   height: 4px;
   accent-color: var(--brand-primary);
   cursor: pointer;
+}
+
+.rem-msg-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+}
+
+.rem-msg-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.rem-msg-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-xs);
+  padding: 6px 9px;
+  font-size: 11.5px;
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.rem-msg-input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px var(--brand-glow);
+}
+
+.rem-msg-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.rem-msg-hint {
+  padding: 6px 12px;
+  font-size: 10px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  line-height: 1.4;
+}
+
+.rem-msg-hint code {
+  font-family: var(--font-mono, monospace);
+  background: var(--bg-input);
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: var(--brand-primary);
+  border: 1px solid var(--border-subtle);
+  font-size: 9.5px;
 }
 
 .modal-footer {

@@ -1285,6 +1285,8 @@ async function initReminderModal() {
   const inputsGroup = document.getElementById("reminderInputsGroup");
   const dot = document.getElementById("reminderIndicatorDot");
   const testFeedback = document.getElementById("testNotifFeedback");
+  const inpMorningMsg = document.getElementById("reminderMorningMsg");
+  const inpEveningMsg = document.getElementById("reminderEveningMsg");
 
   if (!btnReminders || !modal) return;
 
@@ -1296,7 +1298,9 @@ async function initReminderModal() {
       weekdaysOnly: true,
       voiceEnabled: true,
       voiceName: '',
-      voiceRate: 1.0
+      voiceRate: 1.0,
+      morningMessage: '',
+      eveningMessage: ''
     };
 
     if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.getReminderSettings) {
@@ -1474,6 +1478,8 @@ async function initReminderModal() {
     }
     if (chkWeekdays) chkWeekdays.checked = s.weekdaysOnly !== false;
     if (chkVoice) chkVoice.checked = s.voiceEnabled !== false;
+    if (inpMorningMsg) inpMorningMsg.value = s.morningMessage || '';
+    if (inpEveningMsg) inpEveningMsg.value = s.eveningMessage || '';
 
     if (rngRate) {
       rngRate.value = s.voiceRate || 1.0;
@@ -1554,7 +1560,8 @@ async function initReminderModal() {
           type: 'TEST_VOICE',
           options: {
             voiceName: selVoice ? selVoice.value : '',
-            rate: rngRate ? parseFloat(rngRate.value) : 1.0
+            rate: rngRate ? parseFloat(rngRate.value) : 1.0,
+            customText: (inpMorningMsg?.value.trim() || inpEveningMsg?.value.trim()) || ''
           }
         });
         if (testFeedback) {
@@ -1578,7 +1585,9 @@ async function initReminderModal() {
         weekdaysOnly: chkWeekdays ? chkWeekdays.checked : true,
         voiceEnabled: chkVoice ? chkVoice.checked : true,
         voiceName: selVoice ? selVoice.value : '',
-        voiceRate: rngRate ? parseFloat(rngRate.value) : 1.0
+        voiceRate: rngRate ? parseFloat(rngRate.value) : 1.0,
+        morningMessage: inpMorningMsg ? inpMorningMsg.value.trim() : '',
+        eveningMessage: inpEveningMsg ? inpEveningMsg.value.trim() : ''
       };
 
       if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.saveReminderSettings) {

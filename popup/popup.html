@@ -336,6 +336,24 @@
                 </div>
               </div>
             </div>
+
+            <!-- Custom Messages Section -->
+            <div class="rem-section-title">Custom Notification Messages</div>
+            <div class="rem-card">
+              <div class="rem-msg-row">
+                <label class="rem-msg-label" for="reminderMorningMsg">Morning message</label>
+                <input type="text" id="reminderMorningMsg" class="rem-msg-input" placeholder="e.g. Good morning! Ready to plan today's tasks?" spellcheck="false" maxlength="120">
+              </div>
+              <div class="rem-divider"></div>
+              <div class="rem-msg-row">
+                <label class="rem-msg-label" for="reminderEveningMsg">Evening wrap-up</label>
+                <input type="text" id="reminderEveningMsg" class="rem-msg-input" placeholder="e.g. Time to wrap up! You have {pending} tasks left." spellcheck="false" maxlength="120">
+              </div>
+              <div class="rem-divider"></div>
+              <div class="rem-msg-hint">
+                <span>💡 Tags: <code>{pending}</code>, <code>{total}</code>, <code>{completed}</code> &bull; Blank uses smart defaults</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -506,3 +524,10 @@
   <script src="popup.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+

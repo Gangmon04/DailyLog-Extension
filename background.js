@@ -282,21 +282,35 @@ async function getTodayTaskStats() {
   return { total, completed, pending, todayStr };
 }
 
+function formatNotificationMessage(template, stats, fallbackText) {
+  if (!template || typeof template !== 'string' || !template.trim()) {
+    return fallbackText;
+  }
+  let str = template.trim();
+  str = str.replace(/{pending}/gi, stats.pending != null ? stats.pending : 0);
+  str = str.replace(/{total}/gi, stats.total != null ? stats.total : 0);
+  str = str.replace(/{completed}/gi, stats.completed != null ? stats.completed : 0);
+  return str;
+}
+
 async function handleMorningReminder() {
   const stats = await getTodayTaskStats();
   const sData = await getStorage(['reminder_settings']);
   const rSet = sData.reminder_settings || {};
   let title = 'DailyLog — Morning Check-in ☀️';
-  let message = '';
-  let voiceText = '';
+  let defaultMessage = '';
+  let defaultVoice = '';
 
   if (stats.total === 0) {
-    message = "Your task list is empty today. Drop in a couple of goals!";
-    voiceText = "Rise and shine! Your log is completely empty. What are we conquering today?";
+    defaultMessage = "Your task list is empty today. Drop in a couple of goals!";
+    defaultVoice = "Rise and shine! Your log is completely empty. What are we conquering today?";
   } else {
-    message = `You have ${stats.pending} pending task${stats.pending > 1 ? 's' : ''} on deck. Ready to roll?`;
-    voiceText = `Morning boss! You've got ${stats.pending} task${stats.pending > 1 ? 's' : ''} on deck. Let's make them disappear!`;
+    defaultMessage = `You have ${stats.pending} pending task${stats.pending > 1 ? 's' : ''} on deck. Ready to roll?`;
+    defaultVoice = `Morning boss! You've got ${stats.pending} task${stats.pending > 1 ? 's' : ''} on deck. Let's make them disappear!`;
   }
+
+  const message = formatNotificationMessage(rSet.morningMessage, stats, defaultMessage);
+  const voiceText = formatNotificationMessage(rSet.morningMessage, stats, defaultVoice);
 
   triggerVoiceReminder(voiceText);
 
@@ -313,19 +327,22 @@ async function handleEveningReminder() {
   const sData = await getStorage(['reminder_settings']);
   const rSet = sData.reminder_settings || {};
   let title = 'DailyLog — Daily Wrap-up 📋';
-  let message = '';
-  let voiceText = '';
+  let defaultMessage = '';
+  let defaultVoice = '';
 
   if (stats.total === 0) {
-    message = "Your log is totally blank! Quick, record what you worked on before signing off.";
-    voiceText = "Did you work today? Your log is totally blank! Quick, write something down.";
+    defaultMessage = "Your log is totally blank! Quick, record what you worked on before signing off.";
+    defaultVoice = "Did you work today? Your log is totally blank! Quick, write something down.";
   } else if (stats.pending > 0) {
-    message = `You still have ${stats.pending} task${stats.pending > 1 ? 's' : ''} pending. Check them off and sync!`;
-    voiceText = `Clock's ticking! Still ${stats.pending} task${stats.pending > 1 ? 's' : ''} hanging. Check them off and wrap up!`;
+    defaultMessage = `You still have ${stats.pending} task${stats.pending > 1 ? 's' : ''} pending. Check them off and sync!`;
+    defaultVoice = `Clock's ticking! Still ${stats.pending} task${stats.pending > 1 ? 's' : ''} hanging. Check them off and wrap up!`;
   } else {
-    message = `All ${stats.total} tasks completed today! Your daily journal is 100% in sync.`;
-    voiceText = "Boom! All tasks crushed today. You're officially free!";
+    defaultMessage = `All ${stats.total} tasks completed today! Your daily journal is 100% in sync.`;
+    defaultVoice = "Boom! All tasks crushed today. You're officially free!";
   }
+
+  const message = formatNotificationMessage(rSet.eveningMessage, stats, defaultMessage);
+  const voiceText = formatNotificationMessage(rSet.eveningMessage, stats, defaultVoice);
 
   triggerVoiceReminder(voiceText);
 
@@ -492,13 +509,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message?.type === 'TEST_NOTIFICATION') {
     Promise.all([getTodayTaskStats(), getStorage(['reminder_settings'])]).then(([stats, sData]) => {
-      triggerVoiceReminder("Mic check! Your crispy reminders are locked and loaded.");
+      const rSet = sData.reminder_settings || {};
+      const customSample = rSet.morningMessage || rSet.eveningMessage;
+      const testMsg = customSample 
+        ? formatNotificationMessage(customSample, stats, "Mic check! Reminders and voice announcements are active.")
+        : (stats.total > 0
+            ? `All set! You have ${stats.total} tasks on deck (${stats.pending} pending).`
+            : "All set! Reminders and voice announcements are active.");
+      const voiceSample = customSample
+        ? formatNotificationMessage(customSample, stats, "Mic check! Your crispy reminders are locked and loaded.")
+        : "Mic check! Your crispy reminders are locked and loaded.";
+
+      triggerVoiceReminder(voiceSample);
       showNotification({
         id: 'dailylog-test-' + Date.now(),
         title: 'DailyLog — Test Alert 🔔',
-        message: stats.total > 0
-          ? `All set! You have ${stats.total} tasks on deck (${stats.pending} pending).`
-          : "All set! Reminders and voice announcements are active.",
+        message: testMsg,
         buttons: [{ title: 'Open DailyLog' }, { title: 'Snooze 30m' }]
       });
     });
@@ -507,10 +533,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message?.type === 'TEST_VOICE') {
-    getTodayTaskStats().then(stats => {
-      const voiceText = stats.total > 0
-        ? `Mic check! You've got ${stats.pending} task${stats.pending > 1 ? 's' : ''} on deck. Voice is loud and clear!`
-        : "Mic check! Your crispy reminders are locked and loaded.";
+    Promise.all([getTodayTaskStats(), getStorage(['reminder_settings'])]).then(([stats, sData]) => {
+      const rSet = sData.reminder_settings || {};
+      const customSample = message.options?.customText || rSet.morningMessage || rSet.eveningMessage;
+      let voiceText = '';
+      if (customSample) {
+        voiceText = formatNotificationMessage(customSample, stats, "Mic check! Voice announcement is active.");
+      } else if (stats.total > 0) {
+        voiceText = `Mic check! You've got ${stats.pending} task${stats.pending > 1 ? 's' : ''} on deck. Voice is loud and clear!`;
+      } else {
+        voiceText = "Mic check! Your crispy reminders are locked and loaded.";
+      }
       speakVoiceReminder(voiceText, message.options || {});
     });
     sendResponse({ success: true });

@@ -103,7 +103,9 @@ const DailyLogStorage = {
       voiceRate: 1.0,
       voicePitch: 1.0,
       notifyMorningEmpty: true,
-      notifyEveningPending: true
+      notifyEveningPending: true,
+      morningMessage: '',
+      eveningMessage: ''
     };
     const saved = data.reminder_settings || {};
     return {

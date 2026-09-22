@@ -1288,23 +1288,37 @@ async function initReminderModal() {
 
   if (!btnReminders || !modal) return;
 
-  // Load existing reminder settings
-  let settings = {
-    enabled: true,
-    morningTime: '09:30',
-    eveningTime: '17:30',
-    weekdaysOnly: true,
-    voiceEnabled: true,
-    voiceName: '',
-    voiceRate: 1.0
-  };
+  async function loadSettings() {
+    let s = {
+      enabled: true,
+      morningTime: '09:30',
+      eveningTime: '17:30',
+      weekdaysOnly: true,
+      voiceEnabled: true,
+      voiceName: '',
+      voiceRate: 1.0
+    };
 
-  if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.getReminderSettings) {
-    settings = await DailyLogStorage.getReminderSettings();
-  } else if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    const res = await new Promise(r => chrome.storage.local.get(['reminder_settings'], r));
-    if (res && res.reminder_settings) settings = res.reminder_settings;
+    if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.getReminderSettings) {
+      try {
+        const stored = await DailyLogStorage.getReminderSettings();
+        if (stored) s = { ...s, ...stored };
+      } catch (err) {}
+    }
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      try {
+        const res = await new Promise(r => chrome.storage.local.get(['reminder_settings'], r));
+        if (res && res.reminder_settings) s = { ...s, ...res.reminder_settings };
+      } catch (err) {}
+    }
+    try {
+      const local = localStorage.getItem('dailylog_reminder_settings');
+      if (local) s = { ...s, ...JSON.parse(local) };
+    } catch (e) {}
+    return s;
   }
+
+  let settings = await loadSettings();
 
   // Populate installed TTS voices
   loadAvailableVoices(settings.voiceName);
@@ -1339,10 +1353,12 @@ async function initReminderModal() {
     }
   }
 
-  function setup12HourPicker(hiddenId) {
+  function setup12HourPicker(hiddenId, ampmId) {
     const hiddenInp = document.getElementById(hiddenId);
     const textInp = document.getElementById(hiddenId + 'Val');
-    const ampmWrap = document.getElementById(hiddenId.replace('reminder', 'ampm'));
+    const ampmWrap = (ampmId ? document.getElementById(ampmId) : null) ||
+                     document.getElementById(hiddenId.replace('reminder', 'ampm').replace('Time', '')) ||
+                     document.getElementById(hiddenId.replace('reminder', 'ampm'));
     if (!hiddenInp || !textInp || !ampmWrap) return null;
 
     const btnAM = ampmWrap.querySelector('[data-period="AM"]');
@@ -1431,7 +1447,7 @@ async function initReminderModal() {
         let h = parseInt(v.slice(0, 2), 10);
         let m = parseInt(v.slice(2, 4), 10);
         if (h > 12) h = 12;
-        if (h < 1) h = 12;
+        if (h < 1) h = 1;
         if (m > 59) m = 59;
         textInp.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       }
@@ -1441,8 +1457,8 @@ async function initReminderModal() {
     return { setFrom24, updateHidden };
   }
 
-  const morningPicker = setup12HourPicker('reminderMorningTime');
-  const eveningPicker = setup12HourPicker('reminderEveningTime');
+  const morningPicker = setup12HourPicker('reminderMorningTime', 'ampmMorning');
+  const eveningPicker = setup12HourPicker('reminderEveningTime', 'ampmEvening');
 
   function updateFormState(s) {
     if (chkEnabled) chkEnabled.checked = !!s.enabled;
@@ -1500,9 +1516,7 @@ async function initReminderModal() {
   }
 
   btnReminders.addEventListener('click', async () => {
-    if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.getReminderSettings) {
-      settings = await DailyLogStorage.getReminderSettings();
-    }
+    settings = await loadSettings();
     updateFormState(settings);
     modal.style.display = 'flex';
     if (testFeedback) testFeedback.textContent = '';
@@ -1561,7 +1575,7 @@ async function initReminderModal() {
         enabled: chkEnabled.checked,
         morningTime: inpMorning.value || '09:30',
         eveningTime: inpEvening.value || '17:30',
-        weekdaysOnly: chkWeekdays.checked,
+        weekdaysOnly: chkWeekdays ? chkWeekdays.checked : true,
         voiceEnabled: chkVoice ? chkVoice.checked : true,
         voiceName: selVoice ? selVoice.value : '',
         voiceRate: rngRate ? parseFloat(rngRate.value) : 1.0
@@ -1569,12 +1583,16 @@ async function initReminderModal() {
 
       if (typeof DailyLogStorage !== 'undefined' && DailyLogStorage.saveReminderSettings) {
         await DailyLogStorage.saveReminderSettings(updated);
-      } else if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ reminder_settings: updated });
+      }
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        await new Promise(r => chrome.storage.local.set({ reminder_settings: updated }, r));
         if (chrome.runtime && chrome.runtime.sendMessage) {
           chrome.runtime.sendMessage({ type: 'UPDATE_REMINDERS' });
         }
       }
+      try {
+        localStorage.setItem('dailylog_reminder_settings', JSON.stringify(updated));
+      } catch (e) {}
 
       settings = updated;
       updateFormState(settings);
